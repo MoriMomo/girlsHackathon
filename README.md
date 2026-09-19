@@ -1,4 +1,4 @@
-# ledgr — On-Chain Money Tracker
+# ledgr â€” On-Chain Money Tracker
 
 A simple money tracker where **anyone** can connect their wallet and log an expense
 (amount, description, and date) as a **permanent, public record on BOT Chain**. Each wallet
@@ -82,3 +82,8 @@ export const ACTIVE_NETWORK   = 'testnet' // or 'mainnet' for the final submissi
 | RPC URL | https://rpc.bohr.life | https://rpc.botchain.ai |
 | Native token | BOT | BOT |
 | Explorer | https://scan.bohr.life/ | https://scan.botchain.ai |
+
+## Community & Social
+
+- **X (Twitter):** [@LedgrAppBOT](https://x.com/LedgrAppBOT)
+

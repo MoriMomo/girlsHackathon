@@ -51,36 +51,51 @@ export default function NavBar({ wallet }) {
           </nav>
         </div>
 
-        {/* Wallet */}
-        {connected ? (
-          <div className="flex items-center gap-2">
-            <span className="hidden rounded-full border border-slate-700 bg-slate-800 px-2.5 py-1 text-xs text-slate-300 sm:inline">
-              {TARGET.chainName}
-            </span>
-            <a
-              href={explorerAddressUrl(address)}
-              target="_blank"
-              rel="noreferrer"
-              className="rounded-full border border-emerald-500/40 bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-300 hover:bg-emerald-500/20"
-            >
-              {shortAddr(address)}
-            </a>
-            <button
-              onClick={disconnect}
-              className="rounded-full px-2 py-1 text-xs text-slate-400 hover:text-white"
-            >
-              Disconnect
-            </button>
-          </div>
-        ) : (
-          <button
-            onClick={handleConnect}
-            disabled={connecting || walletMissing}
-            className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-500 disabled:opacity-50"
+        {/* Right side */}
+        <div className="flex items-center gap-3">
+          <a
+            href="https://x.com/LedgrAppBOT"
+            target="_blank"
+            rel="noreferrer"
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-800 hover:text-white"
+            title="Follow @LedgrAppBOT on X"
           >
-            {connecting ? 'Connecting…' : 'Connect Wallet'}
-          </button>
-        )}
+            <svg className="h-4 w-4 fill-current" viewBox="0 0 24 24">
+              <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+            </svg>
+          </a>
+
+          {/* Wallet */}
+          {connected ? (
+            <div className="flex items-center gap-2">
+              <span className="hidden rounded-full border border-slate-700 bg-slate-800 px-2.5 py-1 text-xs text-slate-300 sm:inline">
+                {TARGET.chainName}
+              </span>
+              <a
+                href={explorerAddressUrl(address)}
+                target="_blank"
+                rel="noreferrer"
+                className="rounded-full border border-emerald-500/40 bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-300 hover:bg-emerald-500/20"
+              >
+                {shortAddr(address)}
+              </a>
+              <button
+                onClick={disconnect}
+                className="rounded-full px-2 py-1 text-xs text-slate-400 hover:text-white"
+              >
+                Disconnect
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={handleConnect}
+              disabled={connecting || walletMissing}
+              className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-500 disabled:opacity-50"
+            >
+              {connecting ? 'Connecting...' : 'Connect Wallet'}
+            </button>
+          )}
+        </div>
       </div>
     </header>
   )

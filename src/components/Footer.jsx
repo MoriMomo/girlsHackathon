@@ -11,13 +11,29 @@ export default function Footer() {
     <footer className="mt-16 w-full bg-slate-900 py-10 text-center text-xs text-slate-400">
       <div className="mx-auto max-w-4xl px-4">
         {/* Brand row */}
-        <div className="flex items-center justify-center gap-2">
-          <img
-            src={ledgrLogo}
-            alt="ledgr"
-            className="h-6 w-6 rounded bg-white p-0.5 object-contain"
-          />
-          <span className="text-sm font-semibold text-white">ledgr</span>
+        <div className="flex flex-wrap items-center justify-center gap-3">
+          <div className="flex items-center gap-2">
+            <img
+              src={ledgrLogo}
+              alt="ledgr"
+              className="h-6 w-6 rounded bg-white p-0.5 object-contain"
+            />
+            <span className="text-sm font-semibold text-white">ledgr</span>
+          </div>
+
+          <span className="text-slate-700">·</span>
+
+          <a
+            href="https://x.com/LedgrAppBOT"
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-1.5 rounded-full border border-slate-700 bg-slate-800/80 px-2.5 py-1 text-xs font-medium text-slate-300 transition hover:border-slate-600 hover:text-white"
+          >
+            <svg className="h-3 w-3 fill-current" viewBox="0 0 24 24">
+              <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+            </svg>
+            <span>@LedgrAppBOT</span>
+          </a>
         </div>
 
         <p className="mt-4">
