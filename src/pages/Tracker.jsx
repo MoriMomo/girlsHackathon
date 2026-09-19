@@ -7,9 +7,12 @@ import {
   explorerTxUrl,
   todayISO,
   TARGET,
+  CATEGORIES,
+  DEFAULT_CATEGORY,
 } from '../lib/chain.js'
 import { scanReceipt, isAiAvailable } from '../lib/receiptScanner.js'
-import { money, centsToDollars, formatDay } from '../lib/format.js'
+import { money, centsToDollars, formatDay, downloadExpensesCsv } from '../lib/format.js'
+import CategoryChart from '../components/CategoryChart.jsx'
 
 function displayDate(e) {
   const d = e.date ? new Date(`${e.date}T00:00:00`) : new Date(e.timestamp * 1000)
@@ -22,16 +25,15 @@ function isThisMonth(e) {
   return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth()
 }
 
-// The money-tracking screen. Logic is unchanged from the original single-page
-// app -- it now receives wallet state via props (shared across pages) instead
-// of owning it.
 export default function Tracker({ wallet }) {
   const { provider, signer, address, connected } = wallet
 
   const [expenses, setExpenses] = useState([])
   const [amount, setAmount] = useState('')
   const [description, setDescription] = useState('')
+  const [category, setCategory] = useState(DEFAULT_CATEGORY)
   const [date, setDate] = useState(todayISO())
+  const [filterCategory, setFilterCategory] = useState('All')
   const [toast, setToast] = useState(null)
   const [busy, setBusy] = useState(false)
   const [loadingList, setLoadingList] = useState(false)
@@ -45,6 +47,10 @@ export default function Tracker({ wallet }) {
   const monthTotal = useMemo(
     () => expenses.filter(isThisMonth).reduce((sum, e) => sum + centsToDollars(e.amount), 0),
     [expenses],
+  )
+  const visibleExpenses = useMemo(
+    () => (filterCategory === 'All' ? expenses : expenses.filter((e) => e.category === filterCategory)),
+    [expenses, filterCategory],
   )
 
   const showToast = useCallback((kind, text, url) => {
@@ -66,7 +72,6 @@ export default function Tracker({ wallet }) {
     }
   }, [provider, address, showToast])
 
-  // Load records whenever we become connected / the address changes.
   useEffect(() => {
     if (connected) refresh()
     else setExpenses([])
@@ -82,11 +87,12 @@ export default function Tracker({ wallet }) {
       if (result.amount != null) setAmount(String(result.amount))
       if (result.description) setDescription(result.description)
       if (result.date) setDate(result.date)
+      if (result.category) setCategory(result.category)
       showToast(
         'info',
         result.mode === 'ai'
-          ? 'Receipt read by AI. Check the fields, then save.'
-          : 'Fields pre-filled from filename. Check before saving.',
+          ? 'AI read this receipt. Review the fields, then save.'
+          : 'Local scan pre-filled a best guess. Review the fields, then save.',
       )
     } catch (err) {
       showToast('error', `Scan failed: ${err.message || err}. Enter it manually.`)
@@ -105,13 +111,14 @@ export default function Tracker({ wallet }) {
 
     setBusy(true)
     try {
-      showToast('info', 'Waiting for MetaMask…')
-      const receipt = await sendAddExpense(signer, cents, description.trim(), date)
+      showToast('info', 'Confirm the transaction in MetaMask…')
+      const receipt = await sendAddExpense(signer, cents, category, description.trim(), date)
       setAmount('')
       setDescription('')
+      setCategory(DEFAULT_CATEGORY)
       setDate(todayISO())
       const url = receipt?.hash ? explorerTxUrl(receipt.hash) : null
-      showToast('success', 'Saved.', url)
+      showToast('success', 'Saved on-chain.', url)
       await refresh()
     } catch (err) {
       showToast('error', err?.shortMessage || err?.message || String(err))
@@ -126,15 +133,16 @@ export default function Tracker({ wallet }) {
   return (
     <div className="mx-auto max-w-3xl px-4 py-8">
       <div className="mb-8">
-        <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Your ledger</h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Your expense tracker</h1>
         <p className="mt-1 text-sm text-slate-500">
-          Every entry below is on {TARGET.chainName}. Public, permanent, verifiable.
+          Each entry is written to {TARGET.chainName} — permanent, public, and impossible to edit or
+          delete.
         </p>
       </div>
 
       {!connected && (
         <div className="mb-6 flex flex-col items-start gap-3 rounded-lg border border-sky-200 bg-sky-50 px-4 py-4 text-sm text-sky-800 sm:flex-row sm:items-center sm:justify-between">
-          <span>Connect your wallet to add expenses and see your on-chain records.</span>
+          <span>Connect your wallet to add and view your on-chain records.</span>
           <Link
             to="/login"
             className="shrink-0 rounded-lg bg-slate-900 px-4 py-2 text-xs font-semibold text-white hover:bg-slate-700"
@@ -157,6 +165,9 @@ export default function Tracker({ wallet }) {
         <StatTile label="This month" value={money.format(monthTotal)} />
       </div>
 
+      {/* Spending-by-category chart */}
+      <CategoryChart expenses={expenses} />
+
       {/* Form */}
       <form onSubmit={handleAdd} className="mb-8 rounded-xl border border-slate-200 bg-white p-5">
         <div className="mb-4 flex flex-wrap items-center gap-3">
@@ -167,21 +178,21 @@ export default function Tracker({ wallet }) {
             disabled={scanning}
             className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 disabled:opacity-50"
           >
-            {scanning ? 'Reading receipt…' : 'Scan receipt'}
+            {scanning ? 'Scanning…' : 'Scan receipt'}
           </button>
           <span
             className={`text-xs ${aiOn ? 'text-emerald-600' : 'text-slate-400'}`}
             title={
               aiOn
-                ? 'Gemini AI vision is active and reads the receipt image directly.'
-                : 'No API key set. Add VITE_GEMINI_API_KEY to enable AI vision. Currently using filename heuristic.'
+                ? 'A Gemini key is configured: real AI vision scan.'
+                : 'No AI key set: uses a local heuristic. Add VITE_GEMINI_API_KEY to enable AI vision.'
             }
           >
             {aiOn ? 'AI vision on' : 'local mode'}
           </span>
         </div>
 
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-4">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-5">
           <div className="sm:col-span-1">
             <label className="mb-1 block text-xs font-medium text-slate-500">Amount (USD)</label>
             <input
@@ -207,6 +218,20 @@ export default function Tracker({ wallet }) {
             />
           </div>
           <div className="sm:col-span-1">
+            <label className="mb-1 block text-xs font-medium text-slate-500">Category</label>
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+            >
+              {CATEGORIES.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="sm:col-span-1">
             <label className="mb-1 block text-xs font-medium text-slate-500">Date</label>
             <input
               type="date"
@@ -222,13 +247,39 @@ export default function Tracker({ wallet }) {
           disabled={!connected || busy || contractMissing}
           className="mt-4 w-full rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50"
         >
-          {busy ? 'Waiting for MetaMask…' : connected ? 'Save to blockchain' : 'Connect wallet to save'}
+          {busy ? 'Working…' : connected ? 'Save expense on-chain' : 'Connect wallet to save'}
         </button>
       </form>
 
       {/* List */}
       <section>
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-400">On-chain records</h2>
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-400">Your records</h2>
+          <div className="flex items-center gap-3">
+            {expenses.length > 0 && (
+              <select
+                value={filterCategory}
+                onChange={(e) => setFilterCategory(e.target.value)}
+                className="rounded-lg border border-slate-300 px-2 py-1 text-xs text-slate-600 focus:border-emerald-500 focus:outline-none"
+              >
+                {['All', ...CATEGORIES].map((c) => (
+                  <option key={c} value={c}>
+                    {c === 'All' ? 'All categories' : c}
+                  </option>
+                ))}
+              </select>
+            )}
+            {expenses.length > 0 && (
+              <button
+                onClick={() => downloadExpensesCsv(expenses)}
+                className="text-xs font-medium text-emerald-700 underline hover:text-emerald-800"
+              >
+                Export CSV
+              </button>
+            )}
+          </div>
+        </div>
+
         {!connected ? (
           <EmptyRow text="Connect your wallet to see your records." />
         ) : loadingList ? (
@@ -237,14 +288,25 @@ export default function Tracker({ wallet }) {
               <div key={i} className="h-16 animate-pulse rounded-lg border border-slate-200 bg-white" />
             ))}
           </div>
-        ) : expenses.length === 0 ? (
-          <EmptyRow text="Nothing here yet. Add your first expense above and watch it hit the chain." />
+        ) : visibleExpenses.length === 0 ? (
+          <EmptyRow
+            text={
+              expenses.length === 0
+                ? 'No expenses yet. Add your first one above.'
+                : 'No expenses in this category.'
+            }
+          />
         ) : (
           <ul className="divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200 bg-white">
-            {expenses.map((e, i) => (
+            {visibleExpenses.map((e, i) => (
               <li key={i} className="flex items-center justify-between px-4 py-3">
                 <div>
-                  <p className="font-medium text-slate-900">{e.description}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="font-medium text-slate-900">{e.description}</p>
+                    <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-500">
+                      {e.category}
+                    </span>
+                  </div>
                   <p className="text-xs text-slate-400">{displayDate(e)}</p>
                 </div>
                 <p className="font-semibold tabular-nums text-slate-900">
@@ -273,7 +335,7 @@ export default function Tracker({ wallet }) {
                 <>
                   {' '}
                   <a className="underline" href={toast.url} target="_blank" rel="noreferrer">
-                    View on explorer →
+                    View transaction →
                   </a>
                 </>
               )}

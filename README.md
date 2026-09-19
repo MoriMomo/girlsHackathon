@@ -1,7 +1,7 @@
-# On-Chain Money Tracker
+# ledgr — On-Chain Money Tracker
 
 A simple money tracker where **anyone** can connect their wallet and log an expense
-(amount + description) as a **permanent, public record on BOT Chain**. Each wallet
+(amount, description, and date) as a **permanent, public record on BOT Chain**. Each wallet
 keeps its own append-only list: records can never be edited or deleted, and anyone
 can verify them on the block explorer.
 
@@ -58,7 +58,7 @@ export const ACTIVE_NETWORK   = 'testnet' // or 'mainnet' for the final submissi
 
 | Network | Chain ID | Contract Address | Explorer |
 |---|---|---|---|
-| BOT Chain **Testnet** | 968 | `0x... (paste testnet address)` | https://scan.bohr.life/ |
+| BOT Chain **Testnet** | 968 | [`0x3B77EAca869E9084e152B62BA2816784fDc69C46`](https://scan.bohr.life/address/0x3B77EAca869E9084e152B62BA2816784fDc69C46) | https://scan.bohr.life/ |
 | BOT Chain **Mainnet** | 677 | `0x... (paste mainnet address)` | https://scan.botchain.ai |
 
 **Live website:** `https://... (paste your live domain here)`

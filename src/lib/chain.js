@@ -1,35 +1,36 @@
 // Blockchain layer for the money tracker.
 // Talks to the ExpenseTracker contract on BOT Chain via ethers.js + MetaMask.
-//
-// After you deploy contracts/ExpenseTracker.sol in Remix, paste the deployed
-// address into CONTRACT_ADDRESS below (use your TESTNET address while testing,
-// then switch to the MAINNET address for the final submission).
 
 import { BrowserProvider, Contract, getAddress } from 'ethers'
 
 // ---------------------------------------------------------------------------
-// CONFIG -- edit these two things after deploying.
+// CONFIG
 // ---------------------------------------------------------------------------
-
-// Deployed ExpenseTracker address. Testnet deployment (chain 968).
-// Wrapped in getAddress() so ethers normalizes the EIP-55 checksum for us --
-// you can paste the address in ANY casing (even all-lowercase) and it just works.
-// When you deploy to mainnet (677), replace the string with that address and
-// set ACTIVE_NETWORK = 'mainnet'.
 export const CONTRACT_ADDRESS = getAddress(
   '0x3b77eaca869e9084e152b62ba2816784fdc69c46',
 )
-
-// Which network the app targets. 'testnet' (968) while building, 'mainnet' (677) for submission.
 export const ACTIVE_NETWORK = 'testnet'
 
+// Expense categories. Stored on-chain inside the description string (see below).
+export const CATEGORIES = [
+  'Food',
+  'Transport',
+  'Bills',
+  'Shopping',
+  'Health',
+  'Entertainment',
+  'Housing',
+  'Other',
+]
+export const DEFAULT_CATEGORY = 'Other'
+
 // ---------------------------------------------------------------------------
-// BOT Chain network definitions (from the hackathon guidebook / dev docs).
+// BOT Chain networks
 // ---------------------------------------------------------------------------
 export const NETWORKS = {
   testnet: {
     chainId: 968,
-    chainIdHex: '0x3c8', // 968
+    chainIdHex: '0x3c8',
     chainName: 'BOT Chain Testnet',
     rpcUrls: ['https://rpc.bohr.life'],
     nativeCurrency: { name: 'BOT', symbol: 'BOT', decimals: 18 },
@@ -37,7 +38,7 @@ export const NETWORKS = {
   },
   mainnet: {
     chainId: 677,
-    chainIdHex: '0x2a5', // 677
+    chainIdHex: '0x2a5',
     chainName: 'BOT Chain Mainnet',
     rpcUrls: ['https://rpc.botchain.ai'],
     nativeCurrency: { name: 'BOT', symbol: 'BOT', decimals: 18 },
@@ -47,7 +48,6 @@ export const NETWORKS = {
 
 export const TARGET = NETWORKS[ACTIVE_NETWORK]
 
-// Minimal ABI matching contracts/ExpenseTracker.sol.
 export const ABI = [
   'function addExpense(uint256 amount, string description) external',
   'function expenseCount(address wallet) external view returns (uint256)',
@@ -79,45 +79,52 @@ export function explorerTxUrl(txHash) {
 }
 
 // ---------------------------------------------------------------------------
-// Date encoding.
-// The deployed contract stores (amount, description, block-timestamp). To let
-// the user pick the DATE an expense happened -- without redeploying the
-// contract -- we prefix the chosen date onto the description string on-chain
-// using a delimiter, then split it back out for display.
+// Encoding: the deployed contract stores (amount, description, block-timestamp).
+// To carry a user-chosen DATE and CATEGORY without redeploying, we pack them
+// into the description string with a delimiter:
 //
-//   on-chain description = "2026-09-10|lunch"
+//   "2026-09-10|Food|lunch"   (date | category | text)
 //
-// encodeDescription / decodeDescription are the only two places that know about
-// this format, so the UI stays clean. Records written before this feature (no
-// delimiter) decode with a null date and just show their block time -- so old
-// entries like "coffee" / "lunch" still render fine (backward compatible).
+// decodeDescription handles three formats for backward compatibility:
+//   1. "date|category|text"  -> new (all three)
+//   2. "date|text"           -> old (date only, no category)
+//   3. "text"                -> oldest (plain text)
+// Do NOT remove the old branches, or pre-existing on-chain records break.
 // ---------------------------------------------------------------------------
 const DATE_DELIM = '|'
 const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/
 
-/** Combine a chosen YYYY-MM-DD date with the description for on-chain storage. */
-export function encodeDescription(dateStr, description) {
+export function encodeDescription(dateStr, category, description) {
   const clean = String(description || '').trim()
+  const cat = CATEGORIES.includes(category) ? category : DEFAULT_CATEGORY
   if (dateStr && ISO_DATE_RE.test(dateStr)) {
-    return `${dateStr}${DATE_DELIM}${clean}`
+    return `${dateStr}${DATE_DELIM}${cat}${DATE_DELIM}${clean}`
   }
   return clean
 }
 
-/**
- * Split an on-chain description back into { date, description }.
- * date is a YYYY-MM-DD string, or null if the record predates this feature.
- */
 export function decodeDescription(stored) {
   const s = String(stored || '')
-  const idx = s.indexOf(DATE_DELIM)
-  if (idx === 10 && ISO_DATE_RE.test(s.slice(0, 10))) {
-    return { date: s.slice(0, 10), description: s.slice(idx + 1) }
+  const parts = s.split(DATE_DELIM)
+
+  // New format: date | category | description
+  if (parts.length >= 3 && ISO_DATE_RE.test(parts[0])) {
+    return {
+      date: parts[0],
+      category: CATEGORIES.includes(parts[1]) ? parts[1] : DEFAULT_CATEGORY,
+      description: parts.slice(2).join(DATE_DELIM),
+    }
   }
-  return { date: null, description: s }
+
+  // Old format: date | description (no category)
+  if (parts.length === 2 && ISO_DATE_RE.test(parts[0])) {
+    return { date: parts[0], category: DEFAULT_CATEGORY, description: parts[1] }
+  }
+
+  // Oldest format: plain description
+  return { date: null, category: DEFAULT_CATEGORY, description: s }
 }
 
-/** Today's date as YYYY-MM-DD in the user's local timezone (for the date input default). */
 export function todayISO() {
   const d = new Date()
   const tzOffset = d.getTimezoneOffset() * 60000
@@ -125,22 +132,15 @@ export function todayISO() {
 }
 
 // ---------------------------------------------------------------------------
-// Resilience: the public BOT Chain RPC can be flaky and briefly return
-// transient errors (-32002 "too many errors", "could not coalesce error",
-// CALL_EXCEPTION with no revert data). Those are NOT real failures -- a retry
-// a moment later succeeds. withRetry re-attempts an async call a few times with
-// a short backoff, but does NOT retry a genuine user rejection (they clicked
-// "Reject" in MetaMask) or a real contract revert with a reason string.
+// Resilience: retry transient RPC errors, but not user rejections / real reverts.
 // ---------------------------------------------------------------------------
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 
 function isUserRejection(err) {
-  // MetaMask user-denied signature/transaction.
   return err && (err.code === 4001 || err.code === 'ACTION_REJECTED')
 }
 
 function isRealRevert(err) {
-  // A revert that actually carries a reason -- retrying won't help, surface it.
   const reason = err?.reason || err?.revert?.args?.[0]
   return typeof reason === 'string' && reason.length > 0
 }
@@ -152,10 +152,9 @@ async function withRetry(fn, { attempts = 4, baseDelayMs = 700, label = 'call' }
       return await fn()
     } catch (err) {
       lastErr = err
-      // Don't retry things a retry can't fix.
       if (isUserRejection(err) || isRealRevert(err)) throw err
       if (i < attempts - 1) {
-        const delay = baseDelayMs * (i + 1) // linear backoff: 0.7s, 1.4s, 2.1s
+        const delay = baseDelayMs * (i + 1)
         console.warn(
           `[chain] ${label} failed (attempt ${i + 1}/${attempts}), retrying in ${delay}ms:`,
           err?.shortMessage || err?.message || err,
@@ -167,9 +166,6 @@ async function withRetry(fn, { attempts = 4, baseDelayMs = 700, label = 'call' }
   throw lastErr
 }
 
-/**
- * Ensure MetaMask is on the target BOT Chain network. Adds it if missing.
- */
 export async function ensureNetwork() {
   const eth = window.ethereum
   try {
@@ -178,7 +174,6 @@ export async function ensureNetwork() {
       params: [{ chainId: TARGET.chainIdHex }],
     })
   } catch (err) {
-    // 4902 = chain not added to MetaMask yet -> add it, then it's selected.
     if (err && (err.code === 4902 || err.code === -32603)) {
       await eth.request({
         method: 'wallet_addEthereumChain',
@@ -198,9 +193,6 @@ export async function ensureNetwork() {
   }
 }
 
-/**
- * Prompt the wallet, switch to BOT Chain, and return { provider, signer, address }.
- */
 export async function connectWallet() {
   if (!hasWallet()) {
     throw new Error('MetaMask not found. Install it from metamask.io first.')
@@ -223,46 +215,37 @@ function writeContract(signer) {
 }
 
 /**
- * Fetch all expenses for a wallet from the chain. Retries transient RPC errors.
- * Each row is decoded into { amount, description, date, timestamp } where `date`
- * is the user-chosen YYYY-MM-DD (or null for older records) and `timestamp` is
- * the on-chain block time.
- * @returns {Promise<Array<{amount: bigint, description: string, date: string|null, timestamp: number}>>}
+ * Fetch all expenses for a wallet. Each row decoded into
+ * { amount, description, category, date, timestamp }.
  */
 export async function fetchExpenses(provider, wallet) {
   if (!isContractConfigured()) return []
   const c = readContract(provider)
-  const rows = await withRetry(() => c.getExpenses(wallet), {
-    label: 'getExpenses',
-  })
+  const rows = await withRetry(() => c.getExpenses(wallet), { label: 'getExpenses' })
   return rows.map((r) => {
-    const { date, description } = decodeDescription(r.description)
+    const { date, category, description } = decodeDescription(r.description)
     return {
-      amount: r.amount, // bigint, in minor units (cents)
+      amount: r.amount, // bigint, minor units (cents)
       description,
-      date, // user-chosen YYYY-MM-DD, or null
-      timestamp: Number(r.timestamp), // on-chain block time
+      category,
+      date, // user-chosen YYYY-MM-DD or null
+      timestamp: Number(r.timestamp), // block time
     }
   })
 }
 
 /**
- * Send an addExpense transaction. amountCents is an integer (e.g. $12.34 -> 1234).
- * dateStr is the user-chosen YYYY-MM-DD, encoded into the on-chain description.
- * Retries transient RPC errors while sending; a user rejection or a real revert
- * is surfaced immediately (not retried).
- * @returns {Promise<import('ethers').TransactionReceipt>}
+ * Send an addExpense tx. amountCents is an integer; category + dateStr are
+ * packed into the on-chain description via encodeDescription.
  */
-export async function sendAddExpense(signer, amountCents, description, dateStr) {
+export async function sendAddExpense(signer, amountCents, category, description, dateStr) {
   if (!isContractConfigured()) {
     throw new Error(
       'Contract address not set. Deploy ExpenseTracker.sol and paste its address into src/lib/chain.js.',
     )
   }
   const c = writeContract(signer)
-  const stored = encodeDescription(dateStr, description)
-  // Retry only the send (getting the tx accepted by the node). Once we have a
-  // tx, wait for it once -- a mined tx must not be re-sent.
+  const stored = encodeDescription(dateStr, category, description)
   const tx = await withRetry(() => c.addExpense(BigInt(amountCents), stored), {
     label: 'addExpense',
   })
