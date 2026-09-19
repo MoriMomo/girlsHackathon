@@ -1,10 +1,10 @@
-# Submission checklist — Build Week Hackathon Vol.2
+# Submission checklist: Build Week Hackathon Vol.2
 
 Deadline: **Tue Sep 23, 2026, 11:59 PM (Asia/Bangkok / GMT+7)**. Miss one item = not judged.
 
 ## The 4 required items
 - [ ] **Contract address** on BOT Chain (with real on-chain activity)
-- [ ] **Live website link** (a live domain — judges connect a wallet and use it)
+- [ ] **Live website link** (a live domain where judges connect a wallet and use it)
 - [ ] **GitHub repo** with the `.sol` file + this README's **Deployment** section filled in
 - [ ] **X post** on a dedicated project account, tagging **@BOTChain_ai**, link pasted in the form
 
@@ -24,7 +24,7 @@ Deadline: **Tue Sep 23, 2026, 11:59 PM (Asia/Bangkok / GMT+7)**. Miss one item =
 
 3. **Publish the frontend**
    - `npm run build` → deploy the `dist/` folder to GitHub Pages (repo → Settings → Pages).
-   - Buy a cheap domain ($1–1.50), point it at Pages (Settings → Pages → Custom domain + DNS records). Keep the receipt for reimbursement.
+   - Buy a cheap domain ($1 to $1.50), point it at Pages (Settings → Pages → Custom domain + DNS records). Keep the receipt for reimbursement.
    - When the site serves from the domain root, change `base` in `vite.config.js` back to `'/'` and rebuild.
 
 4. **Post on X**
