@@ -3,7 +3,7 @@
 // is passed down; navigating between pages does not reconnect the wallet.
 
 import { useEffect, useState, useCallback } from 'react'
-import { connectWallet, hasWallet } from './chain.js'
+import { connectWallet, hasWallet, friendlyError } from './chain.js'
 
 export function useWallet() {
   const [provider, setProvider] = useState(null)
@@ -24,7 +24,7 @@ export function useWallet() {
       setAddress(a)
       return { provider: p, signer: s, address: a }
     } catch (err) {
-      const msg = err?.shortMessage || err?.message || String(err)
+      const msg = friendlyError(err)
       setError(msg)
       throw err
     } finally {

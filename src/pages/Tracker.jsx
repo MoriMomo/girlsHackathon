@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback, useRef, useEffect } from 'react'
+import { useMemo, useState, useCallback, useRef, useEffect, lazy, Suspense } from 'react'
 import { Link } from 'react-router-dom'
 import {
   fetchExpenses,
@@ -9,10 +9,11 @@ import {
   TARGET,
   CATEGORIES,
   DEFAULT_CATEGORY,
+  friendlyError,
 } from '../lib/chain.js'
 import { scanReceipt, isAiAvailable } from '../lib/receiptScanner.js'
 import { money, centsToDollars, formatDay, downloadExpensesCsv } from '../lib/format.js'
-import CategoryChart from '../components/CategoryChart.jsx'
+const CategoryChart = lazy(() => import('../components/CategoryChart.jsx'))
 
 function displayDate(e) {
   const d = e.date ? new Date(`${e.date}T00:00:00`) : new Date(e.timestamp * 1000)
@@ -66,7 +67,7 @@ export default function Tracker({ wallet }) {
       setExpenses([...rows].reverse())
     } catch (err) {
       console.error(err)
-      showToast('error', `Could not load expenses: ${err.shortMessage || err.message || err}`)
+      showToast('error', `Could not load expenses: ${friendlyError(err)}`)
     } finally {
       setLoadingList(false)
     }
@@ -121,7 +122,7 @@ export default function Tracker({ wallet }) {
       showToast('success', 'Saved on-chain.', url)
       await refresh()
     } catch (err) {
-      showToast('error', err?.shortMessage || err?.message || String(err))
+      showToast('error', friendlyError(err))
     } finally {
       setBusy(false)
     }
@@ -166,7 +167,9 @@ export default function Tracker({ wallet }) {
       </div>
 
       {/* Spending-by-category chart */}
-      <CategoryChart expenses={expenses} />
+      <Suspense fallback={null}>
+        <CategoryChart expenses={expenses} />
+      </Suspense>
 
       {/* Form */}
       <form onSubmit={handleAdd} className="mb-8 rounded-xl border border-slate-200 bg-white p-5">

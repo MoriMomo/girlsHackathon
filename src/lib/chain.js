@@ -131,6 +131,30 @@ export function todayISO() {
   return new Date(d.getTime() - tzOffset).toISOString().slice(0, 10)
 }
 
+/**
+ * Turn a raw ethers/MetaMask error into a short, judge-readable message.
+ * Falls back to the raw shortMessage/message if no pattern matches.
+ */
+export function friendlyError(err) {
+  const raw = String(err?.shortMessage || err?.message || err || '')
+
+  if (err?.code === 4001 || err?.code === 'ACTION_REJECTED') {
+    return 'Transaction cancelled in MetaMask.'
+  }
+  if (/insufficient funds/i.test(raw)) {
+    return 'Not enough BOT in your wallet to pay for gas. Get testnet BOT from the faucet, or contact the organizer for mainnet BOT.'
+  }
+  if (/user rejected/i.test(raw)) {
+    return 'Request rejected in MetaMask.'
+  }
+  if (/network|chain/i.test(raw) && /switch|add/i.test(raw)) {
+    return 'Could not switch to BOT Chain automatically. Please switch networks manually in MetaMask.'
+  }
+  if (/could not detect network|failed to fetch|NETWORK_ERROR/i.test(raw)) {
+    return 'Could not reach the BOT Chain network. Check your connection and try again.'
+  }
+  return raw || 'Something went wrong. Please try again.'
+}
 // ---------------------------------------------------------------------------
 // Resilience: retry transient RPC errors, but not user rejections / real reverts.
 // ---------------------------------------------------------------------------
