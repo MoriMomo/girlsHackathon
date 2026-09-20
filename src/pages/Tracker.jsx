@@ -1,5 +1,5 @@
 import { useMemo, useState, useCallback, useRef, useEffect, lazy, Suspense } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import {
   fetchExpenses,
   sendAddExpense,
@@ -10,6 +10,8 @@ import {
   CATEGORIES,
   DEFAULT_CATEGORY,
   friendlyError,
+  randomGroupId,
+  sendCreateGroup,
 } from '../lib/chain.js'
 import { scanReceipt, isAiAvailable } from '../lib/receiptScanner.js'
 import { money, centsToDollars, formatDay, downloadExpensesCsv } from '../lib/format.js'
@@ -28,6 +30,10 @@ function isThisMonth(e) {
 
 export default function Tracker({ wallet }) {
   const { provider, signer, address, connected } = wallet
+
+  const navigate = useNavigate()
+  const [groupNameInput, setGroupNameInput] = useState('')
+  const [creatingGroup, setCreatingGroup] = useState(false)
 
   const [expenses, setExpenses] = useState([])
   const [amount, setAmount] = useState('')
@@ -125,6 +131,24 @@ export default function Tracker({ wallet }) {
       showToast('error', friendlyError(err))
     } finally {
       setBusy(false)
+    }
+  }
+
+  async function handleCreateGroup(e) {
+    e.preventDefault()
+    if (!connected) return showToast('error', 'Connect your wallet first.')
+    if (!groupNameInput.trim()) return showToast('error', 'Enter a name for the group.')
+
+    setCreatingGroup(true)
+    try {
+      const groupId = randomGroupId()
+      showToast('info', 'Confirm the transaction in MetaMask…')
+      await sendCreateGroup(signer, groupId, groupNameInput.trim())
+      navigate(`/group/${groupId}`)
+    } catch (err) {
+      showToast('error', friendlyError(err))
+    } finally {
+      setCreatingGroup(false)
     }
   }
 
@@ -253,6 +277,34 @@ export default function Tracker({ wallet }) {
           {busy ? 'Workingâ€¦' : connected ? 'Save expense on-chain' : 'Connect wallet to save'}
         </button>
       </form>
+
+      {/* Shared group ledgers */}
+      <div className="mb-8 rounded-xl border border-slate-200 bg-white p-5">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-400">
+          Shared ledgers
+        </h2>
+        <p className="mt-1 mb-4 text-sm text-slate-500">
+          Splitting rent, a trip fund, or club dues? Create a shared ledger anyone can contribute
+          to and verify — no one has to trust a single spreadsheet.
+        </p>
+        <form onSubmit={handleCreateGroup} className="flex flex-col gap-3 sm:flex-row">
+          <input
+            type="text"
+            maxLength={80}
+            value={groupNameInput}
+            onChange={(e) => setGroupNameInput(e.target.value)}
+            placeholder="e.g. Apartment 4B, Bali Trip Fund…"
+            className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+          />
+          <button
+            type="submit"
+            disabled={!connected || creatingGroup || contractMissing}
+            className="shrink-0 rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-700 disabled:opacity-50"
+          >
+            {creatingGroup ? 'Creating…' : connected ? 'Create shared ledger' : 'Connect wallet first'}
+          </button>
+        </form>
+      </div>
 
       {/* List */}
       <section>

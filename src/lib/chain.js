@@ -1,17 +1,17 @@
 // Blockchain layer for the money tracker.
 // Talks to the ExpenseTracker contract on BOT Chain via ethers.js + MetaMask.
 
-import { BrowserProvider, Contract, getAddress } from 'ethers'
+import { BrowserProvider, Contract, getAddress, JsonRpcProvider } from 'ethers'
 
 // ---------------------------------------------------------------------------
 // CONFIG
 // ---------------------------------------------------------------------------
+// Contract WITH group-ledger functions, deployed on BOT Chain Testnet (968).
 export const CONTRACT_ADDRESS = getAddress(
-  '0x3b77eaca869e9084e152b62ba2816784fdc69c46',
+  '0x30A2A3AcD2E5118F50E34A0Ee2e464C5EF8614B0',
 )
-export const ACTIVE_NETWORK = 'testnet'
+export const ACTIVE_NETWORK = 'testnet' // switch to 'mainnet' after final deploy
 
-// Expense categories. Stored on-chain inside the description string (see below).
 export const CATEGORIES = [
   'Food',
   'Transport',
@@ -49,12 +49,24 @@ export const NETWORKS = {
 export const TARGET = NETWORKS[ACTIVE_NETWORK]
 
 export const ABI = [
+  // --- personal ledger ---
   'function addExpense(uint256 amount, string description) external',
   'function expenseCount(address wallet) external view returns (uint256)',
   'function getExpense(address wallet, uint256 index) external view returns (uint256 amount, string description, uint256 timestamp)',
   'function getExpenses(address wallet) external view returns (tuple(uint256 amount, string description, uint256 timestamp)[])',
   'function totalSpent(address wallet) external view returns (uint256)',
   'event ExpenseAdded(address indexed owner, uint256 indexed index, uint256 amount, string description, uint256 timestamp)',
+  // --- group ledger ---
+  'function createGroup(bytes32 groupId, string name) external',
+  'function addGroupExpense(bytes32 groupId, uint256 amount, string description) external',
+  'function getGroupExpenses(bytes32 groupId) external view returns (tuple(address payer, uint256 amount, string description, uint256 timestamp)[])',
+  'function groupExpenseCount(bytes32 groupId) external view returns (uint256)',
+  'function groupExists(bytes32 groupId) external view returns (bool)',
+  'function groupName(bytes32 groupId) external view returns (string)',
+  'function groupCreator(bytes32 groupId) external view returns (address)',
+  'function groupTotalSpent(bytes32 groupId) external view returns (uint256)',
+  'event GroupCreated(bytes32 indexed groupId, string name, address indexed creator)',
+  'event GroupExpenseAdded(bytes32 indexed groupId, address indexed payer, uint256 indexed index, uint256 amount, string description, uint256 timestamp)',
 ]
 
 export function hasWallet() {
@@ -78,18 +90,24 @@ export function explorerTxUrl(txHash) {
   return `${base}/tx/${txHash}`
 }
 
+// A read-only provider that doesn't require MetaMask or a connected wallet.
+// Used so shared group links are viewable by anyone who opens them.
+export function getReadOnlyProvider() {
+  return new JsonRpcProvider(TARGET.rpcUrls[0])
+}
+
+// Generate a random bytes32 id for a new group, client-side.
+export function randomGroupId() {
+  const bytes = new Uint8Array(32)
+  crypto.getRandomValues(bytes)
+  return '0x' + Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('')
+}
+
 // ---------------------------------------------------------------------------
-// Encoding: the deployed contract stores (amount, description, block-timestamp).
-// To carry a user-chosen DATE and CATEGORY without redeploying, we pack them
-// into the description string with a delimiter:
-//
+// Encoding: pack a user-chosen DATE and CATEGORY into the description string:
 //   "2026-09-10|Food|lunch"   (date | category | text)
-//
-// decodeDescription handles three formats for backward compatibility:
-//   1. "date|category|text"  -> new (all three)
-//   2. "date|text"           -> old (date only, no category)
-//   3. "text"                -> oldest (plain text)
-// Do NOT remove the old branches, or pre-existing on-chain records break.
+// decodeDescription handles three formats for backward compatibility.
+// Reused for both personal and group expenses.
 // ---------------------------------------------------------------------------
 const DATE_DELIM = '|'
 const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/
@@ -107,7 +125,6 @@ export function decodeDescription(stored) {
   const s = String(stored || '')
   const parts = s.split(DATE_DELIM)
 
-  // New format: date | category | description
   if (parts.length >= 3 && ISO_DATE_RE.test(parts[0])) {
     return {
       date: parts[0],
@@ -115,13 +132,9 @@ export function decodeDescription(stored) {
       description: parts.slice(2).join(DATE_DELIM),
     }
   }
-
-  // Old format: date | description (no category)
   if (parts.length === 2 && ISO_DATE_RE.test(parts[0])) {
     return { date: parts[0], category: DEFAULT_CATEGORY, description: parts[1] }
   }
-
-  // Oldest format: plain description
   return { date: null, category: DEFAULT_CATEGORY, description: s }
 }
 
@@ -133,7 +146,6 @@ export function todayISO() {
 
 /**
  * Turn a raw ethers/MetaMask error into a short, judge-readable message.
- * Falls back to the raw shortMessage/message if no pattern matches.
  */
 export function friendlyError(err) {
   const raw = String(err?.shortMessage || err?.message || err || '')
@@ -153,8 +165,15 @@ export function friendlyError(err) {
   if (/could not detect network|failed to fetch|NETWORK_ERROR/i.test(raw)) {
     return 'Could not reach the BOT Chain network. Check your connection and try again.'
   }
+  if (/group does not exist/i.test(raw)) {
+    return 'This group does not exist. Double-check the link, or create a new group.'
+  }
+  if (/group already exists/i.test(raw)) {
+    return 'That group ID is already taken. Try creating the group again.'
+  }
   return raw || 'Something went wrong. Please try again.'
 }
+
 // ---------------------------------------------------------------------------
 // Resilience: retry transient RPC errors, but not user rejections / real reverts.
 // ---------------------------------------------------------------------------
@@ -239,8 +258,7 @@ function writeContract(signer) {
 }
 
 /**
- * Fetch all expenses for a wallet. Each row decoded into
- * { amount, description, category, date, timestamp }.
+ * Fetch all personal expenses for a wallet, decoded.
  */
 export async function fetchExpenses(provider, wallet) {
   if (!isContractConfigured()) return []
@@ -249,18 +267,17 @@ export async function fetchExpenses(provider, wallet) {
   return rows.map((r) => {
     const { date, category, description } = decodeDescription(r.description)
     return {
-      amount: r.amount, // bigint, minor units (cents)
+      amount: r.amount,
       description,
       category,
-      date, // user-chosen YYYY-MM-DD or null
-      timestamp: Number(r.timestamp), // block time
+      date,
+      timestamp: Number(r.timestamp),
     }
   })
 }
 
 /**
- * Send an addExpense tx. amountCents is an integer; category + dateStr are
- * packed into the on-chain description via encodeDescription.
+ * Send an addExpense tx (personal ledger).
  */
 export async function sendAddExpense(signer, amountCents, category, description, dateStr) {
   if (!isContractConfigured()) {
@@ -274,4 +291,64 @@ export async function sendAddExpense(signer, amountCents, category, description,
     label: 'addExpense',
   })
   return tx.wait()
+}
+
+// ---------------------------------------------------------------------------
+// Group ledger functions
+// ---------------------------------------------------------------------------
+
+/** Create a new group ledger. groupId should come from randomGroupId(). */
+export async function sendCreateGroup(signer, groupId, name) {
+  if (!isContractConfigured()) {
+    throw new Error('Contract address not set. Deploy the contract first.')
+  }
+  const c = writeContract(signer)
+  const tx = await withRetry(() => c.createGroup(groupId, name), { label: 'createGroup' })
+  return tx.wait()
+}
+
+/** Log an expense to a shared group. Reuses the personal date/category encoding. */
+export async function sendAddGroupExpense(signer, groupId, amountCents, category, description, dateStr) {
+  if (!isContractConfigured()) {
+    throw new Error('Contract address not set. Deploy the contract first.')
+  }
+  const c = writeContract(signer)
+  const stored = encodeDescription(dateStr, category, description)
+  const tx = await withRetry(
+    () => c.addGroupExpense(groupId, BigInt(amountCents), stored),
+    { label: 'addGroupExpense' },
+  )
+  return tx.wait()
+}
+
+/** Fetch a group's metadata. Returns null if the group does not exist. */
+export async function fetchGroupInfo(provider, groupId) {
+  if (!isContractConfigured()) return null
+  const c = readContract(provider)
+  const exists = await withRetry(() => c.groupExists(groupId), { label: 'groupExists' })
+  if (!exists) return null
+  const [name, creator, total] = await Promise.all([
+    c.groupName(groupId),
+    c.groupCreator(groupId),
+    c.groupTotalSpent(groupId),
+  ])
+  return { groupId, name, creator, total }
+}
+
+/** Fetch every expense logged to a group, decoded (each row includes `payer`). */
+export async function fetchGroupExpenses(provider, groupId) {
+  if (!isContractConfigured()) return []
+  const c = readContract(provider)
+  const rows = await withRetry(() => c.getGroupExpenses(groupId), { label: 'getGroupExpenses' })
+  return rows.map((r) => {
+    const { date, category, description } = decodeDescription(r.description)
+    return {
+      payer: r.payer,
+      amount: r.amount,
+      description,
+      category,
+      date,
+      timestamp: Number(r.timestamp),
+    }
+  })
 }

@@ -5,12 +5,8 @@ import Footer from './components/Footer.jsx'
 import Landing from './pages/Landing.jsx'
 import Login from './pages/Login.jsx'
 import Tracker from './pages/Tracker.jsx'
+import GroupTracker from './pages/GroupTracker.jsx'
 
-// App root. Wallet state lives HERE (via useWallet) so it persists across every
-// route -- connecting on one page keeps you connected on the others.
-//
-// HashRouter is deliberate: routes live under /#/, /#/login, /#/tracker, which
-// never 404 on refresh or direct-open on GitHub Pages (no server rewrites needed).
 export default function App() {
   const wallet = useWallet()
 
@@ -23,6 +19,7 @@ export default function App() {
             <Route path="/" element={<Landing wallet={wallet} />} />
             <Route path="/login" element={<Login wallet={wallet} />} />
             <Route path="/tracker" element={<Tracker wallet={wallet} />} />
+            <Route path="/group/:groupId" element={<GroupTracker wallet={wallet} />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </div>

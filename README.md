@@ -52,13 +52,30 @@ export const CONTRACT_ADDRESS = '0xYourDeployedAddress'
 export const ACTIVE_NETWORK   = 'testnet' // or 'mainnet' for the final submission
 ```
 
+## Shared Ledgers
+
+Beyond personal expense tracking, ledgr lets you create a **shared group
+ledger** — for roommates, trip funds, club dues, or any situation where
+multiple people need to log shared expenses without trusting one person''s
+private spreadsheet. Anyone with the link can view the full ledger and see
+exactly who contributed what, verified independently on-chain — no login,
+no wallet required just to look. Connect a wallet to add your own expense
+to the group.
+
+**How it works:** click "Create shared ledger" on the tracker page, name
+your group, and confirm the transaction. You''ll be taken straight to the
+new ledger''s page — copy the link and share it with anyone who needs to
+contribute. Each entry records which wallet logged it, so the "who
+contributed" breakdown is always independently verifiable, by anyone,
+without needing to trust the group creator.
+
 ## Deployment
 
 > Fill these in after you deploy the contract in Remix. Judges check these on the explorer.
 
 | Network | Chain ID | Contract Address | Explorer |
 |---|---|---|---|
-| BOT Chain **Testnet** | 968 | [`0x3B77EAca869E9084e152B62BA2816784fDc69C46`](https://scan.bohr.life/address/0x3B77EAca869E9084e152B62BA2816784fDc69C46) | https://scan.bohr.life/ |
+| BOT Chain **Testnet** | 968 | [`0x30A2A3AcD2E5118F50E34A0Ee2e464C5EF8614B0`](https://scan.bohr.life/address/0x30A2A3AcD2E5118F50E34A0Ee2e464C5EF8614B0) | https://scan.bohr.life/ |
 | BOT Chain **Mainnet** | 677 | `0x... (paste mainnet address)` | https://scan.botchain.ai |
 
 **Live website:** `https://... (paste your live domain here)`
