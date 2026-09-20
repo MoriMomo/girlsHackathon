@@ -1,17 +1,15 @@
 import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { shortAddr } from '../lib/format.js'
 import { explorerAddressUrl, TARGET } from '../lib/chain.js'
-import ledgrLogo from '../assets/ledgr.png'
+import ledgrLogo from '../assets/Green_and_White_Simple_Botanical_Blank_Pages_A5_Document-removebg-preview.png'
 
-// Shared top bar used on every page: logo + nav links on the left,
-// wallet status on the right. Dark chrome (slate-900) with light text and an
-// emerald accent, over a light content area below.
+// Shared top bar — full-black, minimalist.
 export default function NavBar({ wallet }) {
   const navigate = useNavigate()
   const { connected, connecting, address, walletMissing, connect, disconnect } = wallet
 
   const linkClass = ({ isActive }) =>
-    `text-sm transition-colors ${isActive ? 'font-medium text-white' : 'text-slate-400 hover:text-white'
+    `text-sm transition-colors ${isActive ? 'font-medium text-white' : 'text-neutral-400 hover:text-white'
     }`
 
   async function handleConnect() {
@@ -24,7 +22,7 @@ export default function NavBar({ wallet }) {
   }
 
   return (
-    <header className="sticky top-0 z-10 border-b border-slate-800 bg-slate-900">
+    <header className="sticky top-0 z-10 border-b border-white/10 bg-black">
       <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-3">
         {/* Brand + nav */}
         <div className="flex items-center gap-6">
@@ -32,7 +30,7 @@ export default function NavBar({ wallet }) {
             <img
               src={ledgrLogo}
               alt="ledgr"
-              className="h-8 w-8 rounded bg-white p-0.5 object-contain"
+              className="h-10 w-10 object-contain"
             />
             <span className="text-lg font-semibold tracking-tight text-white">ledgr</span>
           </Link>
@@ -57,7 +55,7 @@ export default function NavBar({ wallet }) {
             href="https://x.com/LedgrAppBOT"
             target="_blank"
             rel="noreferrer"
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-800 hover:text-white"
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-neutral-400 transition hover:text-white"
             title="Follow @LedgrAppBOT on X"
           >
             <svg className="h-4 w-4 fill-current" viewBox="0 0 24 24">
@@ -68,20 +66,20 @@ export default function NavBar({ wallet }) {
           {/* Wallet */}
           {connected ? (
             <div className="flex items-center gap-2">
-              <span className="hidden rounded-full border border-slate-700 bg-slate-800 px-2.5 py-1 text-xs text-slate-300 sm:inline">
+              <span className="hidden rounded-full border border-white/15 bg-white/5 px-2.5 py-1 text-xs text-neutral-300 sm:inline">
                 {TARGET.chainName}
               </span>
               <a
                 href={explorerAddressUrl(address)}
                 target="_blank"
                 rel="noreferrer"
-                className="rounded-full border border-emerald-500/40 bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-300 hover:bg-emerald-500/20"
+                className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-medium text-white hover:bg-white/10"
               >
                 {shortAddr(address)}
               </a>
               <button
                 onClick={disconnect}
-                className="rounded-full px-2 py-1 text-xs text-slate-400 hover:text-white"
+                className="rounded-full px-2 py-1 text-xs text-neutral-400 hover:text-white"
               >
                 Disconnect
               </button>
@@ -90,7 +88,7 @@ export default function NavBar({ wallet }) {
             <button
               onClick={handleConnect}
               disabled={connecting || walletMissing}
-              className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-500 disabled:opacity-50"
+              className="rounded-lg bg-white px-4 py-2 text-sm font-medium text-black hover:bg-neutral-200 disabled:opacity-50"
             >
               {connecting ? 'Connecting...' : 'Connect Wallet'}
             </button>

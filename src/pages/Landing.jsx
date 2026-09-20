@@ -1,6 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { TARGET } from '../lib/chain.js'
-import ledgrLogo from '../assets/ledgr.png'
+import ledgrLogo from '../assets/Green_and_White_Simple_Botanical_Blank_Pages_A5_Document-removebg-preview.png'
 
 export default function Landing({ wallet }) {
   const navigate = useNavigate()

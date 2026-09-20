@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { shortAddr } from '../lib/format.js'
 import { explorerAddressUrl, TARGET } from '../lib/chain.js'
-import ledgrLogo from '../assets/ledgr.png'
+import ledgrLogo from '../assets/Green_and_White_Simple_Botanical_Blank_Pages_A5_Document-removebg-preview.png'
 
 export default function Login({ wallet }) {
   const navigate = useNavigate()
