@@ -10,6 +10,11 @@ import { BrowserProvider, Contract, getAddress, JsonRpcProvider } from 'ethers'
 export const CONTRACT_ADDRESS = getAddress(
   '0x30A2A3AcD2E5118F50E34A0Ee2e464C5EF8614B0',
 )
+
+// Block the current contract was deployed at (earliest event log on-chain).
+// Bounds log queries so they stay fast and don't hit RPC range limits.
+// Update this if you redeploy.
+export const DEPLOY_BLOCK = 24069633
 export const ACTIVE_NETWORK = 'testnet' // switch to 'mainnet' after final deploy
 
 export const CATEGORIES = [
@@ -351,4 +356,93 @@ export async function fetchGroupExpenses(provider, groupId) {
       timestamp: Number(r.timestamp),
     }
   })
+}
+
+
+// ---------------------------------------------------------------------------
+// Platform-wide stats, for the landing page's live "numbers that speak"
+// section. Computed entirely from on-chain event logs and current contract
+// state -- no backend, no database, no contract change needed.
+// ---------------------------------------------------------------------------
+
+// Some public RPC nodes cap how many blocks eth_getLogs can span in one call.
+// Query in chunks to stay under typical limits and to fail gracefully chunk
+// by chunk rather than all-or-nothing.
+const LOG_CHUNK_SIZE = 5000n
+
+async function queryLogsChunked(contract, filter, fromBlock, toBlock) {
+  const from = BigInt(fromBlock)
+  const to = BigInt(toBlock)
+  const allLogs = []
+  let start = from
+  while (start <= to) {
+    const end = start + LOG_CHUNK_SIZE - 1n > to ? to : start + LOG_CHUNK_SIZE - 1n
+    try {
+      const logs = await contract.queryFilter(filter, start, end)
+      allLogs.push(...logs)
+    } catch (err) {
+      console.warn(`[chain] log chunk ${start}-${end} failed:`, err?.message || err)
+      // Skip this chunk rather than failing the whole stats fetch --
+      // partial stats are better than none for a marketing page.
+    }
+    start = end + 1n
+  }
+  return allLogs
+}
+
+/**
+ * Compute platform-wide, verifiable stats from on-chain data. Returns null if
+ * the contract isn't configured or log queries are entirely unsupported by the
+ * RPC (caller should hide the stats UI rather than show misleading zeros).
+ */
+export async function fetchPlatformStats(provider) {
+  if (!isContractConfigured()) return null
+
+  const c = readContract(provider)
+  let latest
+  try {
+    latest = await provider.getBlockNumber()
+  } catch (err) {
+    console.warn('[chain] could not get block number for stats:', err)
+    return null
+  }
+
+  let expenseLogs = []
+  let groupLogs = []
+  try {
+    ;[expenseLogs, groupLogs] = await Promise.all([
+      queryLogsChunked(c, c.filters.ExpenseAdded(), DEPLOY_BLOCK, latest),
+      queryLogsChunked(c, c.filters.GroupCreated(), DEPLOY_BLOCK, latest),
+    ])
+  } catch (err) {
+    console.warn('[chain] eth_getLogs unsupported or failed entirely:', err)
+    return null
+  }
+
+  let totalValueCents = 0n
+  const uniqueWallets = new Set()
+  for (const log of expenseLogs) {
+    totalValueCents += log.args.amount
+    uniqueWallets.add(log.args.owner)
+  }
+
+  // Sum current group totals (reads live contract state -- always accurate,
+  // cheaper than re-summing every GroupExpenseAdded event individually).
+  let groupValueCents = 0n
+  for (const log of groupLogs) {
+    try {
+      const total = await c.groupTotalSpent(log.args.groupId)
+      groupValueCents += total
+    } catch {
+      // skip a group we couldn't read; doesn't invalidate the rest
+    }
+  }
+
+  return {
+    totalExpenses: expenseLogs.length,
+    totalValueCents,
+    uniqueWallets: uniqueWallets.size,
+    totalGroups: groupLogs.length,
+    groupValueCents,
+  }
 }
