@@ -95,6 +95,17 @@ Contract → [explorer link]
 
 ---
 
+## Bonus / evergreen post � "why on-chain" (sourced, credible)
+- [ ] Posted
+```
+"Why put expenses on a blockchain?"
+
+Because a blockchain IS a shared, tamper-proof ledger � a single source of truth with no trusted middleman (IBM's own definition).
+
+A shared sheet has an owner who can edit it. ledgr doesn't. Every entry is signed & permanent.
+
+@BOTChain_ai
+```
 ## Cadence tips (make frequency work for you)
 - Space the 2 daily posts ~morning + evening, not back-to-back — looks organic.
 - Reply to your own posts with a one-liner ("here's it on the explorer 👇") — doubles activity cheaply.

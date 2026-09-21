@@ -28,6 +28,27 @@ The main action (logging on-chain) works end to end for **any** wallet, not just
 
 You'll need a little BOT for gas: testnet BOT from [the faucet](https://faucet.botchain.ai/basic), or mainnet BOT from the hackathon organizer.
 
+## Why on-chain?
+
+A blockchain is, by definition, a **shared, tamper-proof ledger** — a single
+source of truth that needs no trusted middleman. That is exactly what ledgr's
+shared group ledgers are for.
+
+- IBM describes blockchain as *"a shared, immutable digital ledger... providing a
+  single source of truth,"* whose value is *"trust without relying on traditional
+  intermediaries."* ([IBM — What Is Blockchain?](https://www.ibm.com/topics/blockchain))
+- A distributed/shared ledger *"does not require a central administrator, and
+  consequently does not have a single point-of-failure,"* and its
+  *"security is enforced through cryptographic keys and signatures."*
+  ([Wikipedia — Distributed ledger](https://en.wikipedia.org/wiki/Distributed_ledger))
+
+**Why that matters here:** a normal shared expense sheet has an owner who can
+quietly edit or delete a row. ledgr has none — every entry is permanent, and each
+group expense is signed by the payer's wallet, so *anyone* can verify who paid
+what without trusting a central keeper. This is the same shared-ledger pattern
+major institutions use to reconcile records between parties that don't fully
+trust each other.
+
 ## Stack
 
 - **Contract:** `contracts/ExpenseTracker.sol`, Solidity `^0.8.20`, deployed via Remix.
