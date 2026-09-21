@@ -36,7 +36,7 @@ export default function Login({ wallet }) {
         {connected ? (
           <>
             <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
-              �“
+              ✓
             </div>
             <h1 className="text-lg font-semibold text-slate-900">You&apos;re in.</h1>
             <p className="mt-1 text-sm text-slate-500">

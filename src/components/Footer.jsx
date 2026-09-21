@@ -3,7 +3,7 @@ import { explorerAddressUrl, isContractConfigured, CONTRACT_ADDRESS, TARGET } fr
 import ledgrLogo from '../assets/Green_and_White_Simple_Botanical_Blank_Pages_A5_Document-removebg-preview.png'
 import botLogo from '../assets/botlogo.png'
 
-// Shared footer �” full-black, minimalist, matches the NavBar.
+// Shared footer — full-black, minimalist, matches the NavBar.
 export default function Footer() {
   return (
     <footer className="mt-16 w-full bg-black py-10 text-center text-xs text-neutral-400">

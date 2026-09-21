@@ -160,7 +160,7 @@ export default function Tracker({ wallet }) {
       <div className="mb-8">
         <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Your expense tracker</h1>
         <p className="mt-1 text-sm text-slate-500">
-          Each entry is written to {TARGET.chainName} �” permanent, public, and impossible to edit or
+          Each entry is written to {TARGET.chainName} — permanent, public, and impossible to edit or
           delete.
         </p>
       </div>
@@ -285,7 +285,7 @@ export default function Tracker({ wallet }) {
         </h2>
         <p className="mt-1 mb-4 text-sm text-slate-500">
           Splitting rent, a trip fund, or club dues? Create a shared ledger anyone can contribute
-          to and verify �” no one has to trust a single spreadsheet.
+          to and verify — no one has to trust a single spreadsheet.
         </p>
         <form onSubmit={handleCreateGroup} className="flex flex-col gap-3 sm:flex-row">
           <input
@@ -390,7 +390,7 @@ export default function Tracker({ wallet }) {
                 <>
                   {' '}
                   <a className="underline" href={toast.url} target="_blank" rel="noreferrer">
-                    View transaction �’
+                    View transaction →
                   </a>
                 </>
               )}
