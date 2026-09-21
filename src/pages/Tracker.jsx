@@ -14,7 +14,9 @@ import {
   sendCreateGroup,
 } from '../lib/chain.js'
 import { scanReceipt, isAiAvailable } from '../lib/receiptScanner.js'
-import { money, centsToDollars, formatDay, downloadExpensesCsv } from '../lib/format.js'
+import { money, centsToDollars, formatDay, downloadExpensesCsv, categoryColor } from '../lib/format.js'
+import { useCountUp } from '../lib/useCountUp.js'
+import { motion } from 'framer-motion'
 const CategoryChart = lazy(() => import('../components/CategoryChart.jsx'))
 
 function displayDate(e) {
@@ -160,8 +162,8 @@ export default function Tracker({ wallet }) {
       <div className="mb-8">
         <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Your expense tracker</h1>
         <p className="mt-1 text-sm text-slate-500">
-          Each entry is written to {TARGET.chainName} — permanent, public, and impossible to edit or
-          delete.
+          Entries are committed directly to {TARGET.chainName} — public, immutable, and verifiable
+          on the block explorer.
         </p>
       </div>
 
@@ -185,9 +187,9 @@ export default function Tracker({ wallet }) {
 
       {/* Summary */}
       <div className="mb-8 grid grid-cols-3 gap-3">
-        <StatTile label="Total logged" value={money.format(total)} />
-        <StatTile label="Entries" value={String(expenses.length)} />
-        <StatTile label="This month" value={money.format(monthTotal)} />
+        <StatTile label="Total logged" value={total} format={(v) => money.format(v)} accent />
+        <StatTile label="Entries" value={expenses.length} format={(v) => String(Math.round(v))} />
+        <StatTile label="This month" value={monthTotal} format={(v) => money.format(v)} />
       </div>
 
       {/* Spending-by-category chart */}
@@ -196,26 +198,32 @@ export default function Tracker({ wallet }) {
       </Suspense>
 
       {/* Form */}
-      <form onSubmit={handleAdd} className="mb-8 rounded-xl border border-slate-200 bg-white p-5">
+      <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-400">Add an expense</h2>
+      <form onSubmit={handleAdd} className="mb-8 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
         <div className="mb-4 flex flex-wrap items-center gap-3">
           <input ref={fileInputRef} type="file" accept="image/*" onChange={handleScanFile} className="hidden" />
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
             disabled={scanning}
-            className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 disabled:opacity-50"
+            className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-100 disabled:opacity-50"
           >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
+              <path d="M14.5 4h-5L8 6H4a1 1 0 0 0-1 1v11a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V7a1 1 0 0 0-1-1h-4l-1.5-2Z" />
+              <circle cx="12" cy="13" r="3.5" />
+            </svg>
             {scanning ? 'Scanning…' : 'Scan receipt'}
           </button>
           <span
-            className={`text-xs ${aiOn ? 'text-emerald-600' : 'text-slate-400'}`}
+            className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium ${aiOn ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-slate-50 text-slate-500'}`}
             title={
               aiOn
                 ? 'A Gemini key is configured: real AI vision scan.'
                 : 'No AI key set: uses a local heuristic. Add VITE_GEMINI_API_KEY to enable AI vision.'
             }
           >
-            {aiOn ? 'AI vision on' : 'local mode'}
+            <span className={`h-1.5 w-1.5 rounded-full ${aiOn ? 'bg-emerald-500' : 'bg-slate-400'}`} />
+            {aiOn ? 'AI vision on' : 'Local mode'}
           </span>
         </div>
 
@@ -246,17 +254,24 @@ export default function Tracker({ wallet }) {
           </div>
           <div className="sm:col-span-1">
             <label className="mb-1 block text-xs font-medium text-slate-500">Category</label>
-            <select
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-            >
-              {CATEGORIES.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
+            <div className="relative">
+              <span
+                className="pointer-events-none absolute left-3 top-1/2 h-2.5 w-2.5 -translate-y-1/2 rounded-full"
+                style={{ backgroundColor: categoryColor(category) }}
+                aria-hidden="true"
+              />
+              <select
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                className="w-full rounded-lg border border-slate-300 py-2 pl-7 pr-3 text-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+              >
+                {CATEGORIES.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
           <div className="sm:col-span-1">
             <label className="mb-1 block text-xs font-medium text-slate-500">Date</label>
@@ -272,7 +287,7 @@ export default function Tracker({ wallet }) {
         <button
           type="submit"
           disabled={!connected || busy || contractMissing}
-          className="mt-4 w-full rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50"
+          className="mt-4 w-full rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-emerald-600/20 transition hover:bg-emerald-700 hover:shadow-md hover:shadow-emerald-600/25 disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none"
         >
           {busy ? 'Working…' : connected ? 'Save expense on-chain' : 'Connect wallet to save'}
         </button>
@@ -336,7 +351,16 @@ export default function Tracker({ wallet }) {
         </div>
 
         {!connected ? (
-          <EmptyRow text="Connect your wallet to see your records." />
+          <EmptyRow
+            text="Connect your wallet to see your records."
+            icon={
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5">
+                <rect x="3" y="6" width="18" height="13" rx="2" />
+                <path d="M16 12h3" />
+                <path d="M3 9h13a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1H3" />
+              </svg>
+            }
+          />
         ) : loadingList ? (
           <div className="space-y-2">
             {[0, 1, 2].map((i) => (
@@ -352,22 +376,35 @@ export default function Tracker({ wallet }) {
             }
           />
         ) : (
-          <ul className="divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200 bg-white">
+          <ul className="divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
             {visibleExpenses.map((e, i) => (
-              <li key={i} className="flex items-center justify-between px-4 py-3">
-                <div>
+              <motion.li
+                key={i}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.25, delay: Math.min(i * 0.03, 0.3), ease: 'easeOut' }}
+                className="flex items-center justify-between gap-3 px-4 py-3 transition-colors hover:bg-slate-50"
+              >
+                <div className="min-w-0">
                   <div className="flex items-center gap-2">
-                    <p className="font-medium text-slate-900">{e.description}</p>
-                    <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-500">
+                    <p className="truncate font-medium text-slate-900">{e.description}</p>
+                    <span
+                      className="inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium"
+                      style={{
+                        color: categoryColor(e.category),
+                        backgroundColor: `${categoryColor(e.category)}1a`,
+                      }}
+                    >
+                      <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: categoryColor(e.category) }} />
                       {e.category}
                     </span>
                   </div>
-                  <p className="text-xs text-slate-400">{displayDate(e)}</p>
+                  <p className="mt-0.5 text-xs text-slate-400">{displayDate(e)}</p>
                 </div>
-                <p className="font-semibold tabular-nums text-slate-900">
+                <p className="shrink-0 font-semibold tabular-nums text-slate-900">
                   {money.format(centsToDollars(e.amount))}
                 </p>
-              </li>
+              </motion.li>
             ))}
           </ul>
         )}
@@ -405,19 +442,35 @@ export default function Tracker({ wallet }) {
   )
 }
 
-function StatTile({ label, value }) {
+function StatTile({ label, value, format, accent = false }) {
+  const animated = useCountUp(value)
   return (
-    <div className="rounded-xl border border-slate-200 bg-white px-4 py-3">
-      <p className="text-xs uppercase tracking-wide text-slate-400">{label}</p>
-      <p className="mt-1 text-lg font-semibold tabular-nums text-slate-900">{value}</p>
+    <div className="relative overflow-hidden rounded-xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
+      {/* accent top edge */}
+      <div
+        className={`absolute inset-x-0 top-0 h-0.5 ${accent ? 'bg-emerald-500' : 'bg-slate-200'}`}
+        aria-hidden="true"
+      />
+      <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">{label}</p>
+      <p className={`mt-1.5 text-xl font-bold tabular-nums sm:text-2xl ${accent ? 'text-emerald-600' : 'text-slate-900'}`}>
+        {format ? format(animated) : animated}
+      </p>
     </div>
   )
 }
 
-function EmptyRow({ text }) {
+function EmptyRow({ text, icon }) {
   return (
-    <div className="rounded-xl border border-dashed border-slate-200 bg-white px-4 py-8 text-center text-sm text-slate-400">
-      {text}
+    <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-200 bg-white px-4 py-12 text-center">
+      <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-slate-100 text-slate-400">
+        {icon || (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5">
+            <path d="M4 7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7Z" />
+            <path d="M4 10h16" />
+          </svg>
+        )}
+      </div>
+      <p className="text-sm text-slate-400">{text}</p>
     </div>
   )
 }

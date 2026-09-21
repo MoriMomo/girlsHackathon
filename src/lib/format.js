@@ -48,3 +48,20 @@ export function downloadExpensesCsv(expenses, filename = 'ledgr-expenses.csv') {
   document.body.removeChild(a)
   URL.revokeObjectURL(url)
 }
+
+
+// Consistent color per category (matches the CategoryChart palette). Used for
+// the little dot in the form's category select and the pills in the list.
+const CATEGORY_COLORS = {
+  Food: '#059669',
+  Transport: '#0891b2',
+  Bills: '#7c3aed',
+  Shopping: '#db2777',
+  Health: '#d97706',
+  Entertainment: '#dc2626',
+  Housing: '#4f46e5',
+  Other: '#64748b',
+}
+export function categoryColor(category) {
+  return CATEGORY_COLORS[category] || CATEGORY_COLORS.Other
+}

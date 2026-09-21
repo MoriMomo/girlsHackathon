@@ -6,7 +6,7 @@ import botLogo from '../assets/botlogo.png'
 // Shared footer — full-black, minimalist, matches the NavBar.
 export default function Footer() {
   return (
-    <footer className="mt-16 w-full bg-black py-10 text-center text-xs text-neutral-400">
+    <footer className="w-full border-t border-neutral-800/80 bg-black py-12 text-center text-xs text-neutral-400">
       <div className="mx-auto max-w-4xl px-4">
         {/* Brand row */}
         <div className="flex flex-wrap items-center justify-center gap-3">
