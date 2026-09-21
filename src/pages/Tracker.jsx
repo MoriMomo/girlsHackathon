@@ -142,7 +142,7 @@ export default function Tracker({ wallet }) {
     setCreatingGroup(true)
     try {
       const groupId = randomGroupId()
-      showToast('info', 'Confirm the transaction in MetaMaskÖ')
+      showToast('info', 'Confirm the transaction in MetaMask‚Ä¶')
       await sendCreateGroup(signer, groupId, groupNameInput.trim())
       navigate(`/group/${groupId}`)
     } catch (err) {
@@ -160,7 +160,7 @@ export default function Tracker({ wallet }) {
       <div className="mb-8">
         <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Your expense tracker</h1>
         <p className="mt-1 text-sm text-slate-500">
-          Each entry is written to {TARGET.chainName} ‚Äî permanent, public, and impossible to edit or
+          Each entry is written to {TARGET.chainName} ‚Ä‚Äù permanent, public, and impossible to edit or
           delete.
         </p>
       </div>
@@ -285,7 +285,7 @@ export default function Tracker({ wallet }) {
         </h2>
         <p className="mt-1 mb-4 text-sm text-slate-500">
           Splitting rent, a trip fund, or club dues? Create a shared ledger anyone can contribute
-          to and verify ó no one has to trust a single spreadsheet.
+          to and verify ‚Ä‚Äù no one has to trust a single spreadsheet.
         </p>
         <form onSubmit={handleCreateGroup} className="flex flex-col gap-3 sm:flex-row">
           <input
@@ -293,7 +293,7 @@ export default function Tracker({ wallet }) {
             maxLength={80}
             value={groupNameInput}
             onChange={(e) => setGroupNameInput(e.target.value)}
-            placeholder="e.g. Apartment 4B, Bali Trip FundÖ"
+            placeholder="e.g. Apartment 4B, Bali Trip Fund‚Ä¶"
             className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
           />
           <button
@@ -301,7 +301,7 @@ export default function Tracker({ wallet }) {
             disabled={!connected || creatingGroup || contractMissing}
             className="shrink-0 rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-700 disabled:opacity-50"
           >
-            {creatingGroup ? 'CreatingÖ' : connected ? 'Create shared ledger' : 'Connect wallet first'}
+            {creatingGroup ? 'Creating‚Ä¶' : connected ? 'Create shared ledger' : 'Connect wallet first'}
           </button>
         </form>
       </div>
@@ -390,7 +390,7 @@ export default function Tracker({ wallet }) {
                 <>
                   {' '}
                   <a className="underline" href={toast.url} target="_blank" rel="noreferrer">
-                    View transaction ‚Üí
+                    View transaction ‚Ü‚Äô
                   </a>
                 </>
               )}

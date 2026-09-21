@@ -144,7 +144,7 @@ export default function GroupTracker({ wallet }) {
       <div className="mb-8">
         <h1 className="text-2xl font-semibold tracking-tight text-slate-900">{group.name}</h1>
         <p className="mt-1 text-sm text-slate-500">
-          A shared ledger on {TARGET.chainName} — anyone with this link can view every entry and
+          A shared ledger on {TARGET.chainName} �” anyone with this link can view every entry and
           verify who contributed what. No wallet required to look; connect one to add an expense.
         </p>
         <div className="mt-3 flex items-center gap-2">
@@ -332,7 +332,7 @@ export default function GroupTracker({ wallet }) {
                 <>
                   {' '}
                   <a className="underline" href={toast.url} target="_blank" rel="noreferrer">
-                    View transaction →
+                    View transaction �’
                   </a>
                 </>
               )}

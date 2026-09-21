@@ -3,7 +3,7 @@ import { shortAddr } from '../lib/format.js'
 import { explorerAddressUrl, TARGET } from '../lib/chain.js'
 import ledgrLogo from '../assets/Green_and_White_Simple_Botanical_Blank_Pages_A5_Document-removebg-preview.png'
 
-// Shared top bar — full-black, minimalist.
+// Shared top bar �” full-black, minimalist.
 export default function NavBar({ wallet }) {
   const navigate = useNavigate()
   const { connected, connecting, address, walletMissing, connect, disconnect } = wallet
