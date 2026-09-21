@@ -16,6 +16,7 @@ import {
 import { scanReceipt, isAiAvailable } from '../lib/receiptScanner.js'
 import { money, centsToDollars, formatDay, downloadExpensesCsv, categoryColor } from '../lib/format.js'
 import { useCountUp } from '../lib/useCountUp.js'
+import { listGroups, rememberGroup, parseGroupId } from '../lib/groupStore.js'
 import { motion } from 'framer-motion'
 const CategoryChart = lazy(() => import('../components/CategoryChart.jsx'))
 
@@ -36,6 +37,8 @@ export default function Tracker({ wallet }) {
   const navigate = useNavigate()
   const [groupNameInput, setGroupNameInput] = useState('')
   const [creatingGroup, setCreatingGroup] = useState(false)
+  const [savedGroups, setSavedGroups] = useState([])
+  const [openGroupInput, setOpenGroupInput] = useState('')
 
   const [expenses, setExpenses] = useState([])
   const [amount, setAmount] = useState('')
@@ -85,6 +88,10 @@ export default function Tracker({ wallet }) {
     if (connected) refresh()
     else setExpenses([])
   }, [connected, address, refresh])
+
+  useEffect(() => {
+    setSavedGroups(connected ? listGroups(address) : [])
+  }, [connected, address])
 
   async function handleScanFile(e) {
     const file = e.target.files?.[0]
@@ -145,7 +152,9 @@ export default function Tracker({ wallet }) {
     try {
       const groupId = randomGroupId()
       showToast('info', 'Confirm the transaction in MetaMask…')
-      await sendCreateGroup(signer, groupId, groupNameInput.trim())
+      const name = groupNameInput.trim()
+      await sendCreateGroup(signer, groupId, name)
+      rememberGroup(address, groupId, name)
       navigate(`/group/${groupId}`)
     } catch (err) {
       showToast('error', friendlyError(err))
@@ -198,7 +207,11 @@ export default function Tracker({ wallet }) {
       </Suspense>
 
       {/* Form */}
-      <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-400">Add an expense</h2>
+      <div className="mb-4 border-t border-slate-200 pt-8">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-400">Personal</h2>
+        <p className="mt-1 text-sm text-slate-500">Your own expenses, logged to your wallet.</p>
+      </div>
+      <h3 className="mb-3 text-xs font-medium uppercase tracking-wide text-slate-400">Add an expense</h3>
       <form onSubmit={handleAdd} className="mb-8 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
         <div className="mb-4 flex flex-wrap items-center gap-3">
           <input ref={fileInputRef} type="file" accept="image/*" onChange={handleScanFile} className="hidden" />
@@ -293,38 +306,85 @@ export default function Tracker({ wallet }) {
         </button>
       </form>
 
-      {/* Shared group ledgers */}
-      <div className="mb-8 rounded-xl border border-slate-200 bg-white p-5">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-400">
-          Shared ledgers
-        </h2>
-        <p className="mt-1 mb-4 text-sm text-slate-500">
+      {/* ============ SHARED SECTION ============ */}
+      <div className="mb-4 border-t border-slate-200 pt-8">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-400">Shared ledgers</h2>
+        <p className="mt-1 text-sm text-slate-500">
           Splitting rent, a trip fund, or club dues? Create a shared ledger anyone can contribute
           to and verify — no one has to trust a single spreadsheet.
         </p>
+      </div>
+
+      {/* Your saved shared ledgers */}
+      {savedGroups.length > 0 && (
+        <ul className="mb-4 grid gap-2 sm:grid-cols-2">
+          {savedGroups.map((g) => (
+            <li key={g.id}>
+              <Link
+                to={`/group/${g.id}`}
+                className="group flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm transition hover:border-emerald-300 hover:bg-emerald-50/40"
+              >
+                <span className="min-w-0">
+                  <span className="block truncate font-medium text-slate-900">{g.name}</span>
+                  <span className="block truncate font-mono text-[11px] text-slate-400">
+                    {g.id.slice(0, 10)}…{g.id.slice(-6)}
+                  </span>
+                </span>
+                <span className="ml-3 shrink-0 text-slate-300 transition group-hover:text-emerald-500">→</span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {/* Create + recover */}
+      <div className="mb-8 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
         <form onSubmit={handleCreateGroup} className="flex flex-col gap-3 sm:flex-row">
           <input
             type="text"
             maxLength={80}
             value={groupNameInput}
             onChange={(e) => setGroupNameInput(e.target.value)}
-            placeholder="e.g. Apartment 4B, Bali Trip Fund…"
+            placeholder="Name a new ledger — e.g. Apartment 4B, Bali Trip Fund"
             className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
           />
           <button
             type="submit"
             disabled={!connected || creatingGroup || contractMissing}
-            className="shrink-0 rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-700 disabled:opacity-50"
+            className="shrink-0 rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {creatingGroup ? 'Creating…' : connected ? 'Create shared ledger' : 'Connect wallet first'}
           </button>
         </form>
+
+        {/* Recovery: open an existing ledger by link or id */}
+        <div className="mt-3 flex flex-col gap-2 border-t border-slate-100 pt-3 sm:flex-row">
+          <input
+            type="text"
+            value={openGroupInput}
+            onChange={(e) => setOpenGroupInput(e.target.value)}
+            placeholder="Have a ledger link or ID? Paste it to open"
+            className="flex-1 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+          />
+          <button
+            type="button"
+            onClick={() => {
+              const id = parseGroupId(openGroupInput)
+              if (!id) return showToast('error', 'That does not look like a valid ledger link or ID.')
+              if (connected) rememberGroup(address, id, 'Shared ledger')
+              navigate(`/group/${id}`)
+            }}
+            className="shrink-0 rounded-lg border border-slate-300 px-4 py-2 text-xs font-medium text-slate-700 transition hover:bg-slate-100"
+          >
+            Open ledger
+          </button>
+        </div>
       </div>
 
       {/* List */}
       <section>
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-400">Your records</h2>
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-400">Personal records</h2>
           <div className="flex items-center gap-3">
             {expenses.length > 0 && (
               <select

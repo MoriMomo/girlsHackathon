@@ -41,6 +41,12 @@ export default function NavBar({ wallet }) {
             <NavLink to="/tracker" className={linkClass}>
               Tracker
             </NavLink>
+            <NavLink to="/ledgers" className={linkClass}>
+              Ledgers
+            </NavLink>
+            <NavLink to="/blog" className={linkClass}>
+              Blog
+            </NavLink>
             {!connected && (
               <NavLink to="/login" className={linkClass}>
                 Sign in

@@ -6,6 +6,9 @@ import Landing from './pages/Landing.jsx'
 import Login from './pages/Login.jsx'
 import Tracker from './pages/Tracker.jsx'
 import GroupTracker from './pages/GroupTracker.jsx'
+import Ledgers from './pages/Ledgers.jsx'
+import Blog from './pages/Blog.jsx'
+import BlogPost from './pages/BlogPost.jsx'
 
 export default function App() {
   const wallet = useWallet()
@@ -19,6 +22,9 @@ export default function App() {
             <Route path="/" element={<Landing wallet={wallet} />} />
             <Route path="/login" element={<Login wallet={wallet} />} />
             <Route path="/tracker" element={<Tracker wallet={wallet} />} />
+            <Route path="/ledgers" element={<Ledgers wallet={wallet} />} />
+            <Route path="/blog" element={<Blog />} />
+            <Route path="/blog/:slug" element={<BlogPost />} />
             <Route path="/group/:groupId" element={<GroupTracker wallet={wallet} />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

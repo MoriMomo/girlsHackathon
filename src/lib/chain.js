@@ -446,3 +446,69 @@ export async function fetchPlatformStats(provider) {
     groupValueCents,
   }
 }
+
+// ---------------------------------------------------------------------------
+// Ledger discovery from on-chain events. Lets the UI list shared ledgers
+// without any database or localStorage -- reconstructed from GroupCreated logs,
+// so it works on any device / fresh browser. Uses the same chunked eth_getLogs
+// as the platform stats.
+// ---------------------------------------------------------------------------
+
+function dedupeGroups(logs) {
+  // Newest first, one entry per groupId.
+  const seen = new Set()
+  const out = []
+  for (let i = logs.length - 1; i >= 0; i--) {
+    const l = logs[i]
+    const id = l.args.groupId
+    if (seen.has(id)) continue
+    seen.add(id)
+    out.push({ id, name: l.args.name, creator: l.args.creator })
+  }
+  return out
+}
+
+/**
+ * Every shared ledger created by `wallet`, read from GroupCreated events.
+ * `creator` is an indexed topic, so the RPC filters server-side -- fast.
+ * Returns [{ id, name, creator }] newest first, or [] on failure/unsupported.
+ */
+export async function fetchGroupsByCreator(provider, wallet) {
+  if (!isContractConfigured() || !wallet) return []
+  const c = readContract(provider)
+  let latest
+  try {
+    latest = await provider.getBlockNumber()
+  } catch {
+    return []
+  }
+  try {
+    const logs = await queryLogsChunked(c, c.filters.GroupCreated(null, null, wallet), DEPLOY_BLOCK, latest)
+    return dedupeGroups(logs)
+  } catch (err) {
+    console.warn('[chain] fetchGroupsByCreator failed:', err?.message || err)
+    return []
+  }
+}
+
+/**
+ * Every shared ledger ever created (public browse). Returns [{ id, name, creator }]
+ * newest first, or [] on failure/unsupported.
+ */
+export async function fetchAllGroups(provider) {
+  if (!isContractConfigured()) return []
+  const c = readContract(provider)
+  let latest
+  try {
+    latest = await provider.getBlockNumber()
+  } catch {
+    return []
+  }
+  try {
+    const logs = await queryLogsChunked(c, c.filters.GroupCreated(), DEPLOY_BLOCK, latest)
+    return dedupeGroups(logs)
+  } catch (err) {
+    console.warn('[chain] fetchAllGroups failed:', err?.message || err)
+    return []
+  }
+}
