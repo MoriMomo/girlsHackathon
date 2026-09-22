@@ -21,6 +21,10 @@ export default function NavBar({ wallet }) {
     }`
 
   async function handleConnect() {
+    if (walletMissing) {
+      navigate('/login')
+      return
+    }
     try {
       await connect()
       navigate('/tracker')
@@ -38,7 +42,9 @@ export default function NavBar({ wallet }) {
           <Link to="/" className="flex items-center gap-2" onClick={() => setMobileOpen(false)}>
             <img
               src={ledgrLogo}
-              alt="ledgr"
+              alt=""
+              width="40"
+              height="40"
               className="h-10 w-10 object-contain"
             />
             <span className="text-lg font-semibold tracking-tight text-white">ledgr</span>
@@ -112,7 +118,7 @@ export default function NavBar({ wallet }) {
           ) : (
             <button
               onClick={handleConnect}
-              disabled={connecting || walletMissing}
+              disabled={connecting}
               className="rounded-lg bg-white px-3 py-1.5 text-xs font-medium text-black hover:bg-neutral-200 disabled:opacity-50 sm:px-4 sm:py-2 sm:text-sm"
             >
               {connecting ? 'Connecting...' : 'Connect Wallet'}

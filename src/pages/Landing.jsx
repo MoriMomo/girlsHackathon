@@ -46,13 +46,24 @@ export default function Landing({ wallet }) {
         if (!cancelled) setStatsLoading(false)
       }
     }
-    load()
-    return () => { cancelled = true }
+    const timer = setTimeout(load, 50)
+    return () => {
+      cancelled = true
+      clearTimeout(timer)
+    }
   }, [])
 
   async function handlePrimary() {
-    if (connected) { navigate('/tracker'); return }
-    try { await connect(); navigate('/tracker') } catch { /* error surfaced elsewhere */ }
+    if (connected || walletMissing) {
+      navigate('/tracker')
+      return
+    }
+    try {
+      await connect()
+      navigate('/tracker')
+    } catch {
+      navigate('/tracker')
+    }
   }
 
   // Terminal demo: loops through a sequence of expense entries forever, so the
@@ -61,22 +72,22 @@ export default function Landing({ wallet }) {
     [
       { text: '> addExpense(4250, "Coffee with team")', cls: 'text-emerald-400' },
       { text: '  tx 0x3a1f…c82e  confirming…', cls: 'text-neutral-500' },
-      { text: '  ? block 24,069,891  confirmed', cls: 'text-emerald-400' },
+      { text: '  ✓ block 24,069,891  confirmed', cls: 'text-emerald-400' },
     ],
     [
       { text: '> addExpense(1800, "Bus fare")', cls: 'text-emerald-400' },
       { text: '  tx 0x7be2…41aa  confirming…', cls: 'text-neutral-500' },
-      { text: '  ? block 24,069,905  confirmed', cls: 'text-emerald-400' },
+      { text: '  ✓ block 24,069,905  confirmed', cls: 'text-emerald-400' },
     ],
     [
       { text: '> addGroupExpense("Apt 4B", 32000, "Rent")', cls: 'text-emerald-400' },
       { text: '  tx 0x9c04…d7f1  confirming…', cls: 'text-neutral-500' },
-      { text: '  ? block 24,069,932  confirmed', cls: 'text-emerald-400' },
+      { text: '  ✓ block 24,069,932  confirmed', cls: 'text-emerald-400' },
     ],
     [
       { text: '> addExpense(950, "Groceries")', cls: 'text-emerald-400' },
       { text: '  tx 0x2ad8…6b3c  confirming…', cls: 'text-neutral-500' },
-      { text: '  ? block 24,069,958  confirmed', cls: 'text-emerald-400' },
+      { text: '  ✓ block 24,069,958  confirmed', cls: 'text-emerald-400' },
     ],
   ]
 
@@ -132,12 +143,12 @@ export default function Landing({ wallet }) {
             <span className="uppercase">Live on {TARGET.chainName}</span>
             {isContractConfigured() && (
               <>
-                <span className="text-neutral-700">·</span>
+                <span className="text-neutral-500">·</span>
                 <a
                   href={explorerAddressUrl(CONTRACT_ADDRESS)}
                   target="_blank"
                   rel="noreferrer"
-                  className="font-mono text-neutral-600 transition hover:text-neutral-400"
+                  className="font-mono text-neutral-400 transition hover:text-white"
                 >
                   {CONTRACT_ADDRESS.slice(0, 6)}…{CONTRACT_ADDRESS.slice(-4)}
                 </a>
@@ -162,24 +173,24 @@ export default function Landing({ wallet }) {
           <div className="mt-8 flex flex-wrap items-center gap-3">
             <button
               onClick={handlePrimary}
-              disabled={connecting || (walletMissing && !connected)}
+              disabled={connecting}
               className="rounded bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-black transition hover:bg-emerald-400 active:scale-[0.98] disabled:opacity-50"
             >
               {connected ? 'Open your tracker' : connecting ? 'Connecting…' : 'Launch tracker'}
             </button>
             <Link
-              to="/tracker"
+              to="/ledgers"
               className="group flex items-center gap-1.5 px-1 text-sm font-medium text-neutral-400 transition hover:text-white"
             >
-              Browse public group
+              Browse shared ledgers
               <span className="inline-block transition-transform group-hover:translate-x-0.5">→</span>
             </Link>
           </div>
 
           {walletMissing && !connected && (
-            <p className="mt-4 text-xs text-neutral-600">
+            <p className="mt-4 text-xs text-neutral-400">
               MetaMask not detected.{' '}
-              <a className="underline hover:text-neutral-400" href="https://metamask.io" target="_blank" rel="noreferrer">
+              <a className="underline hover:text-white" href="https://metamask.io" target="_blank" rel="noreferrer">
                 Install it
               </a>{' '}and refresh.
             </p>
@@ -192,7 +203,7 @@ export default function Landing({ wallet }) {
               <span className="h-2 w-2 rounded-full bg-neutral-700" />
               <span className="h-2 w-2 rounded-full bg-neutral-700" />
               <span className="h-2 w-2 rounded-full bg-neutral-700" />
-              <span className="ml-2 font-mono text-[11px] text-neutral-600">ExpenseTracker.sol</span>
+              <span className="ml-2 font-mono text-[11px] text-neutral-400">ExpenseTracker.sol</span>
             </div>
 
             {/* Terminal content */}
@@ -251,7 +262,7 @@ export default function Landing({ wallet }) {
       <section className="bg-[#0a0a0a] py-20 sm:py-28">
         <div className="mx-auto max-w-5xl px-5">
           <Reveal>
-            <p className="mb-12 text-xs font-medium uppercase tracking-widest text-neutral-600">Capabilities</p>
+            <h2 className="mb-12 text-xs font-medium uppercase tracking-widest text-neutral-400">Capabilities</h2>
 
             <div className="grid gap-4 sm:grid-cols-2">
               <CapabilityCard
@@ -283,7 +294,7 @@ export default function Landing({ wallet }) {
       <section className="border-t border-neutral-800 bg-[#0a0a0a] py-20 sm:py-28">
         <div className="mx-auto max-w-5xl px-5">
           <Reveal>
-            <p className="mb-14 text-xs font-medium uppercase tracking-widest text-neutral-600">Workflow</p>
+            <h2 className="mb-14 text-xs font-medium uppercase tracking-widest text-neutral-400">Workflow</h2>
 
             <div className="grid gap-px sm:grid-cols-3">
               <PipelineStep
@@ -312,7 +323,7 @@ export default function Landing({ wallet }) {
         <div className="mx-auto max-w-5xl px-5">
           <Reveal>
             <div className="max-w-xl">
-              <p className="mb-4 text-xs font-medium uppercase tracking-widest text-neutral-600">Architecture</p>
+              <h2 className="mb-4 text-xs font-medium uppercase tracking-widest text-neutral-400">Architecture</h2>
               <p className="text-base leading-relaxed text-neutral-400">
                 Traditional expense apps store records in centralized databases where rows
                 can be altered, backdated, or dropped without trace. ledgr delegates record-keeping
@@ -322,7 +333,7 @@ export default function Landing({ wallet }) {
               <div className="mt-8">
                 <button
                   onClick={handlePrimary}
-                  disabled={connecting || (walletMissing && !connected)}
+                  disabled={connecting}
                   className="text-sm font-medium text-emerald-400 underline underline-offset-4 decoration-emerald-400/30 transition hover:decoration-emerald-400 disabled:opacity-50"
                 >
                   {connected ? 'Go to your tracker →' : 'Launch tracker →'}
@@ -374,7 +385,7 @@ function PipelineStep({ n, title, body, first }) {
         </span>
         <span className="relative font-mono text-xs font-medium text-emerald-400">{n}</span>
         <h3 className="relative mt-3 text-base font-semibold text-white">{title}</h3>
-        <p className="relative mt-2 max-w-xs text-sm leading-relaxed text-neutral-500">{body}</p>
+        <p className="relative mt-2 max-w-xs text-sm leading-relaxed text-neutral-400">{body}</p>
       </div>
     </div>
   )
@@ -404,7 +415,7 @@ function CapabilityCard({ icon, title, body }) {
         {icon}
       </div>
       <h3 className="text-sm font-semibold text-white">{title}</h3>
-      <p className="mt-1.5 text-sm leading-relaxed text-neutral-500">{body}</p>
+      <p className="mt-1.5 text-sm leading-relaxed text-neutral-400">{body}</p>
     </div>
   )
 }

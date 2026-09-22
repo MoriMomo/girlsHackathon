@@ -43,7 +43,9 @@ export default function Login({ wallet }) {
         </AnimatePresence>
         <motion.img
           src={ledgrLogo}
-          alt="ledgr"
+          alt="ledgr logo"
+          width="56"
+          height="56"
           className="relative h-14 w-14 object-contain"
           animate={connecting ? { scale: [1, 1.06, 1] } : { scale: 1 }}
           transition={connecting ? { duration: 1.4, repeat: Infinity, ease: 'easeInOut' } : { duration: 0.3 }}

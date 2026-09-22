@@ -432,17 +432,12 @@ export async function fetchPlatformStats(provider) {
     uniqueWallets.add(log.args.owner)
   }
 
-  // Sum current group totals (reads live contract state -- always accurate,
+  // Sum current group totals in parallel (reads live contract state -- always accurate,
   // cheaper than re-summing every GroupExpenseAdded event individually).
-  let groupValueCents = 0n
-  for (const log of groupLogs) {
-    try {
-      const total = await c.groupTotalSpent(log.args.groupId)
-      groupValueCents += total
-    } catch {
-      // skip a group we couldn't read; doesn't invalidate the rest
-    }
-  }
+  const groupTotals = await Promise.all(
+    groupLogs.map((log) => c.groupTotalSpent(log.args.groupId).catch(() => 0n)),
+  )
+  const groupValueCents = groupTotals.reduce((sum, total) => sum + (total || 0n), 0n)
 
   return {
     totalExpenses: expenseLogs.length,

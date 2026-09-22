@@ -112,4 +112,4 @@ Optional — enable the real AI receipt scan: copy `.env.example` to `.env` and 
 
 - **X (Twitter):** [@LedgrAppBOT](https://x.com/LedgrAppBOT)
 
-Built on [BOT Chain](https://botchain.ai) · [BOT Chain Explorer](https://scan.botchain.ai)
+Built on [BOT Chain](https://botchain.ai) · [BOT Chain Explorer](https://scan.botchain.ai)
