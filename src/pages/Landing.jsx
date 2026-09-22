@@ -283,26 +283,26 @@ export default function Landing({ wallet }) {
       <section className="border-t border-neutral-800 bg-[#0a0a0a] py-20 sm:py-28">
         <div className="mx-auto max-w-5xl px-5">
           <Reveal>
-          <p className="mb-14 text-xs font-medium uppercase tracking-widest text-neutral-600">Workflow</p>
+            <p className="mb-14 text-xs font-medium uppercase tracking-widest text-neutral-600">Workflow</p>
 
-          <div className="grid gap-px sm:grid-cols-3">
-            <PipelineStep
-              n="01"
-              title="Connect wallet"
-              body={`Prompts your wallet to switch to ${TARGET.chainName} with pre-configured network parameters.`}
-              first
-            />
-            <PipelineStep
-              n="02"
-              title="Log transaction"
-              body="Specify amount, category, and description manually or populate from a photo receipt."
-            />
-            <PipelineStep
-              n="03"
-              title="Sign & broadcast"
-              body="Sign via MetaMask. The contract executes and writes the entry to the ledger with an explorer link."
-            />
-          </div>
+            <div className="grid gap-px sm:grid-cols-3">
+              <PipelineStep
+                n="01"
+                title="Connect wallet"
+                body={`Prompts your wallet to switch to ${TARGET.chainName} with pre-configured network parameters.`}
+                first
+              />
+              <PipelineStep
+                n="02"
+                title="Log transaction"
+                body="Specify amount, category, and description manually or populate from a photo receipt."
+              />
+              <PipelineStep
+                n="03"
+                title="Sign & broadcast"
+                body="Sign via MetaMask. The contract executes and writes the entry to the ledger with an explorer link."
+              />
+            </div>
           </Reveal>
         </div>
       </section>
@@ -311,24 +311,24 @@ export default function Landing({ wallet }) {
       <section className="border-t border-neutral-800 bg-[#0a0a0a] py-20 sm:py-24">
         <div className="mx-auto max-w-5xl px-5">
           <Reveal>
-          <div className="max-w-xl">
-            <p className="mb-4 text-xs font-medium uppercase tracking-widest text-neutral-600">Architecture</p>
-            <p className="text-base leading-relaxed text-neutral-400">
-              Traditional expense apps store records in centralized databases where rows
-              can be altered, backdated, or dropped without trace. ledgr delegates record-keeping
-              to an EVM smart contract, producing an immutable audit trail tied to cryptographic
-              signatures.
-            </p>
-            <div className="mt-8">
-              <button
-                onClick={handlePrimary}
-                disabled={connecting || (walletMissing && !connected)}
-                className="text-sm font-medium text-emerald-400 underline underline-offset-4 decoration-emerald-400/30 transition hover:decoration-emerald-400 disabled:opacity-50"
-              >
-                {connected ? 'Go to your tracker →' : 'Launch tracker →'}
-              </button>
+            <div className="max-w-xl">
+              <p className="mb-4 text-xs font-medium uppercase tracking-widest text-neutral-600">Architecture</p>
+              <p className="text-base leading-relaxed text-neutral-400">
+                Traditional expense apps store records in centralized databases where rows
+                can be altered, backdated, or dropped without trace. ledgr delegates record-keeping
+                to an EVM smart contract, producing an immutable audit trail tied to cryptographic
+                signatures.
+              </p>
+              <div className="mt-8">
+                <button
+                  onClick={handlePrimary}
+                  disabled={connecting || (walletMissing && !connected)}
+                  className="text-sm font-medium text-emerald-400 underline underline-offset-4 decoration-emerald-400/30 transition hover:decoration-emerald-400 disabled:opacity-50"
+                >
+                  {connected ? 'Go to your tracker →' : 'Launch tracker →'}
+                </button>
+              </div>
             </div>
-          </div>
           </Reveal>
         </div>
       </section>

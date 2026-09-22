@@ -4,18 +4,36 @@
 import { BrowserProvider, Contract, getAddress, JsonRpcProvider } from 'ethers'
 
 // ---------------------------------------------------------------------------
-// CONFIG
+// BOT Chain Mainnet configuration & contract
 // ---------------------------------------------------------------------------
-// Contract WITH group-ledger functions, deployed on BOT Chain Testnet (968).
-export const CONTRACT_ADDRESS = getAddress(
-  '0x30A2A3AcD2E5118F50E34A0Ee2e464C5EF8614B0',
-)
+export const TARGET = {
+  key: 'mainnet',
+  chainId: 677,
+  chainIdHex: '0x2a5',
+  chainName: 'BOT Chain Mainnet',
+  rpcUrls: ['https://rpc.botchain.ai'],
+  nativeCurrency: { name: 'BOT', symbol: 'BOT', decimals: 18 },
+  blockExplorerUrls: ['https://scan.botchain.ai/'],
+  contractAddress: '0xe18f4DF3B4Faa2D7F49b3F1581c04427a0Be9223',
+  deployBlock: 24130000,
+}
 
-// Block the current contract was deployed at (earliest event log on-chain).
-// Bounds log queries so they stay fast and don't hit RPC range limits.
-// Update this if you redeploy.
-export const DEPLOY_BLOCK = 24069633
-export const ACTIVE_NETWORK = 'testnet' // switch to 'mainnet' after final deploy
+export const ACTIVE_NETWORK = 'mainnet'
+export const NETWORKS = { mainnet: TARGET }
+
+export function getActiveNetworkKey() {
+  return 'mainnet'
+}
+
+export async function setActiveNetworkKey() {
+  // Mainnet only
+}
+
+export const CONTRACT_ADDRESS = TARGET.contractAddress
+  ? getAddress(TARGET.contractAddress)
+  : '0x0000000000000000000000000000000000000000'
+
+export const DEPLOY_BLOCK = TARGET.deployBlock || 0
 
 export const CATEGORIES = [
   'Food',
@@ -28,30 +46,6 @@ export const CATEGORIES = [
   'Other',
 ]
 export const DEFAULT_CATEGORY = 'Other'
-
-// ---------------------------------------------------------------------------
-// BOT Chain networks
-// ---------------------------------------------------------------------------
-export const NETWORKS = {
-  testnet: {
-    chainId: 968,
-    chainIdHex: '0x3c8',
-    chainName: 'BOT Chain Testnet',
-    rpcUrls: ['https://rpc.bohr.life'],
-    nativeCurrency: { name: 'BOT', symbol: 'BOT', decimals: 18 },
-    blockExplorerUrls: ['https://scan.bohr.life/'],
-  },
-  mainnet: {
-    chainId: 677,
-    chainIdHex: '0x2a5',
-    chainName: 'BOT Chain Mainnet',
-    rpcUrls: ['https://rpc.botchain.ai'],
-    nativeCurrency: { name: 'BOT', symbol: 'BOT', decimals: 18 },
-    blockExplorerUrls: ['https://scan.botchain.ai'],
-  },
-}
-
-export const TARGET = NETWORKS[ACTIVE_NETWORK]
 
 export const ABI = [
   // --- personal ledger ---
@@ -159,7 +153,7 @@ export function friendlyError(err) {
     return 'Transaction cancelled in MetaMask.'
   }
   if (/insufficient funds/i.test(raw)) {
-    return 'Not enough BOT in your wallet to pay for gas. Get testnet BOT from the faucet, or contact the organizer for mainnet BOT.'
+    return 'Not enough BOT in your wallet to pay for gas on BOT Chain Mainnet.'
   }
   if (/user rejected/i.test(raw)) {
     return 'Request rejected in MetaMask.'
@@ -324,6 +318,18 @@ export async function sendAddGroupExpense(signer, groupId, amountCents, category
     { label: 'addGroupExpense' },
   )
   return tx.wait()
+}
+
+/** Fast on-chain check to verify if a group exists on the current chain. */
+export async function checkGroupExists(groupId, provider) {
+  if (!isContractConfigured() || !groupId) return false
+  try {
+    const p = provider || getReadOnlyProvider()
+    const c = readContract(p)
+    return await c.groupExists(groupId)
+  } catch {
+    return false
+  }
 }
 
 /** Fetch a group's metadata. Returns null if the group does not exist. */
@@ -520,7 +526,7 @@ export async function fetchAllGroups(provider) {
 export const ExpenseTrackerEvents = {
   // Fire `cb` whenever a GroupExpenseAdded event lands for `groupId`.
   onGroupExpenseAdded(groupId, cb) {
-    if (!isContractConfigured()) return () => {}
+    if (!isContractConfigured()) return () => { }
     let contract
     try {
       const provider = getReadOnlyProvider()
@@ -530,7 +536,7 @@ export const ExpenseTrackerEvents = {
       contract.on(filter, handler)
       return () => { try { contract.off(filter, handler) } catch { /* ignore */ } }
     } catch {
-      return () => {}
+      return () => { }
     }
   },
 }

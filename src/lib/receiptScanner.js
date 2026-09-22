@@ -16,10 +16,16 @@ const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/
 // Resilient model fallback cascade: if the primary model is busy (503) or rate-limited (429),
 // try the next active model endpoint before falling back to local heuristic.
 const GEMINI_MODELS = [
+  // Lead with Google's maintained aliases (kept pointed at a healthy model),
+  // then concrete flash tiers. More endpoints = better odds during a 503 wave.
+  // If ALL fail, scanReceipt() falls back to the local heuristic so the app
+  // never breaks in a demo.
+  'gemini-flash-latest',
+  'gemini-flash-lite-latest',
   'gemini-3.5-flash',
+  'gemini-3-flash-preview',
   'gemini-3.5-flash-lite',
   'gemini-3.1-flash-lite',
-  'gemini-flash-latest',
 ]
 
 function todayISO() {

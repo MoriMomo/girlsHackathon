@@ -26,7 +26,7 @@ Built for the Girl Meets Tech **Build Week Hackathon Vol.2** (BOT Chain, EVM-com
 
 The main action (logging on-chain) works end to end for **any** wallet, not just the deployer.
 
-You'll need a little BOT for gas: testnet BOT from [the faucet](https://faucet.botchain.ai/basic), or mainnet BOT from the hackathon organizer.
+You'll need a little BOT for gas on BOT Chain Mainnet. Contact the hackathon organizer to receive your BOT tokens.
 
 ## Why on-chain?
 
@@ -67,13 +67,10 @@ Then open the URL Vite prints (default http://localhost:5173/girlsHackathon/).
 Optional — enable the real AI receipt scan: copy `.env.example` to `.env` and set `VITE_GEMINI_API_KEY` (free key from Google AI Studio). Without it, the scan runs in local-parser mode.
 
 ## Deployment
-
+ 
 | Network | Chain ID | Contract Address | Explorer |
 |---|---|---|---|
-| BOT Chain **Testnet** | 968 | [`0x30A2A3AcD2E5118F50E34A0Ee2e464C5EF8614B0`](https://scan.bohr.life/address/0x30A2A3AcD2E5118F50E34A0Ee2e464C5EF8614B0) | https://scan.bohr.life/ |
-| BOT Chain **Mainnet** | 677 | `0x... (paste mainnet address after deploy)` | https://scan.botchain.ai |
-
-**Live website:** `https://... (paste your live domain here)`
+| BOT Chain **Mainnet** | 677 | [`0xe18f4DF3B4Faa2D7F49b3F1581c04427a0Be9223`](https://scan.botchain.ai/address/0xe18f4DF3B4Faa2D7F49b3F1581c04427a0Be9223) | https://scan.botchain.ai/ |
 
 ## Contract interface
 
@@ -102,14 +99,14 @@ Optional — enable the real AI receipt scan: copy `.env.example` to `.env` and 
 
 > Note: date and category are packed into the on-chain `description` string (`YYYY-MM-DD|Category|text`) so both are stored on-chain without extra contract fields; the frontend encodes/decodes them.
 
-## Network reference
+## Network reference (BOT Chain Mainnet)
 
-| | Testnet | Mainnet |
-|---|---|---|
-| Chain ID | 968 | 677 |
-| RPC URL | https://rpc.bohr.life | https://rpc.botchain.ai |
-| Native token | BOT | BOT |
-| Explorer | https://scan.bohr.life/ | https://scan.botchain.ai |
+| Parameter | Value |
+|---|---|
+| Chain ID | 677 (`0x2a5`) |
+| RPC URL | https://rpc.botchain.ai |
+| Native token | BOT |
+| Block Explorer | https://scan.botchain.ai |
 
 ## Community & Social
 

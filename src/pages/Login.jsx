@@ -50,7 +50,7 @@ export default function Login({ wallet }) {
         />
       </div>
 
-      <div className="w-full overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm">
+      <div className="w-full overflow-hidden rounded-2xl border border-white/10 bg-neutral-900/80 p-6 text-center shadow-2xl shadow-emerald-950/20 backdrop-blur-md">
         <AnimatePresence mode="wait">
           {connected ? (
             <motion.div
@@ -62,7 +62,7 @@ export default function Login({ wallet }) {
             >
               {/* Success check pops in */}
               <motion.div
-                className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50 text-emerald-600"
+                className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full border border-emerald-500/20 bg-emerald-500/10 text-emerald-400"
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={{ type: 'spring', stiffness: 400, damping: 15, delay: 0.05 }}
@@ -76,22 +76,22 @@ export default function Login({ wallet }) {
                   />
                 </svg>
               </motion.div>
-              <h1 className="text-lg font-semibold text-slate-900">You&apos;re in.</h1>
-              <p className="mt-1 text-sm text-slate-500">
+              <h1 className="text-lg font-semibold text-white">You&apos;re in.</h1>
+              <p className="mt-1 text-sm text-neutral-400">
                 Connected as{' '}
                 <a
                   href={explorerAddressUrl(address)}
                   target="_blank"
                   rel="noreferrer"
-                  className="font-medium text-emerald-700 underline"
+                  className="font-medium text-emerald-400 underline"
                 >
                   {shortAddr(address)}
                 </a>
               </p>
-              <p className="mt-1 text-xs text-slate-400">Taking you to your ledger…</p>
+              <p className="mt-1 text-xs text-neutral-500">Taking you to your ledger…</p>
               <Link
                 to="/tracker"
-                className="mt-5 inline-block w-full rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700"
+                className="mt-5 inline-block w-full rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-emerald-900/30 transition hover:bg-emerald-500"
               >
                 Go to ledger
               </Link>
@@ -104,15 +104,15 @@ export default function Login({ wallet }) {
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.35, ease: 'easeOut' }}
             >
-              <h1 className="text-lg font-semibold text-slate-900">Connect your wallet to sign in</h1>
-              <p className="mt-2 text-sm text-slate-500">
+              <h1 className="text-lg font-semibold text-white">Connect your wallet to sign in</h1>
+              <p className="mt-2 text-sm text-neutral-400">
                 No email. No password. Your wallet address is your identity on {TARGET.chainName}.
               </p>
 
               <button
                 onClick={handleConnect}
                 disabled={connecting || walletMissing}
-                className="mt-6 flex w-full items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:opacity-60"
+                className="mt-6 flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-900/30 transition hover:bg-emerald-500 disabled:opacity-50"
               >
                 {connecting ? (
                   <>
@@ -128,28 +128,28 @@ export default function Login({ wallet }) {
                 )}
               </button>
 
-              <p className="mt-3 text-xs text-slate-400">
+              <p className="mt-3 text-xs text-neutral-400">
                 {connecting
                   ? 'Check MetaMask — approve the connection and network switch.'
                   : 'BOT Chain is added automatically. Nothing to configure.'}
               </p>
 
               {walletMissing && (
-                <p className="mt-3 text-xs text-amber-600">
+                <p className="mt-3 text-xs text-amber-400">
                   MetaMask not detected.{' '}
-                  <a className="underline" href="https://metamask.io" target="_blank" rel="noreferrer">
+                  <a className="underline text-amber-300 hover:text-white" href="https://metamask.io" target="_blank" rel="noreferrer">
                     Install it here
                   </a>{' '}
                   and refresh.
                 </p>
               )}
-              {error && <p className="mt-3 break-words text-xs text-red-600">{error}</p>}
+              {error && <p className="mt-3 break-words text-xs text-red-400">{error}</p>}
             </motion.div>
           )}
         </AnimatePresence>
       </div>
 
-      <p className="mt-6 text-center text-xs text-slate-400">
+      <p className="mt-6 text-center text-xs text-neutral-500">
         A wallet is a free app that holds your on-chain identity. ledgr never sees your private keys.
       </p>
     </div>

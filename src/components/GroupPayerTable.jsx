@@ -38,24 +38,24 @@ export default function GroupPayerTable({ expenses, formatAmount, onRenamed }) {
   }
 
   return (
-    <div className="mb-8 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-      <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-400">
+    <div className="mb-8 rounded-xl border border-white/10 bg-neutral-900/80 p-5 shadow-md backdrop-blur-sm">
+      <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-neutral-400">
         Who contributed
       </h2>
       <table className="w-full text-sm">
         <thead>
-          <tr className="text-left text-xs uppercase tracking-wide text-slate-400">
+          <tr className="text-left text-xs uppercase tracking-wide text-neutral-500 border-b border-white/10">
             <th className="pb-2 font-medium">Wallet</th>
             <th className="pb-2 font-medium">Entries</th>
             <th className="pb-2 text-right font-medium">Total logged</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-100">
+        <tbody className="divide-y divide-white/5">
           {byPayer.map((row) => (
             <tr key={row.payer}>
-              <td className="py-2 text-slate-700">
+              <td className="py-2.5 text-neutral-200">
                 {editing === row.payer ? (
-                  <span className="flex items-center gap-1">
+                  <span className="flex items-center gap-1.5">
                     <input
                       autoFocus
                       value={draft}
@@ -65,23 +65,23 @@ export default function GroupPayerTable({ expenses, formatAmount, onRenamed }) {
                         if (e.key === 'Escape') setEditing(null)
                       }}
                       placeholder={shortAddress(row.payer)}
-                      className="w-28 rounded border border-slate-300 px-2 py-0.5 text-xs focus:border-emerald-500 focus:outline-none"
+                      className="w-28 rounded border border-white/20 bg-neutral-950 px-2 py-0.5 text-xs text-white focus:border-emerald-500 focus:outline-none"
                     />
                     <button
                       onClick={() => save(row.payer)}
-                      className="text-xs font-medium text-emerald-700 hover:text-emerald-800"
+                      className="text-xs font-medium text-emerald-400 hover:text-emerald-300"
                     >
                       Save
                     </button>
                   </span>
                 ) : (
                   <span className="group inline-flex items-center gap-1.5">
-                    <span className={getNickname(row.payer) ? 'font-medium' : 'font-mono text-slate-600'}>
+                    <span className={getNickname(row.payer) ? 'font-medium text-white' : 'font-mono text-neutral-400'}>
                       {displayName(row.payer)}
                     </span>
                     <button
                       onClick={() => startEdit(row.payer)}
-                      className="text-[10px] text-slate-400 opacity-0 transition group-hover:opacity-100 hover:text-emerald-600"
+                      className="text-[10px] text-neutral-500 opacity-0 transition group-hover:opacity-100 hover:text-emerald-400"
                       title="Rename this wallet"
                     >
                       ✎
@@ -89,8 +89,8 @@ export default function GroupPayerTable({ expenses, formatAmount, onRenamed }) {
                   </span>
                 )}
               </td>
-              <td className="py-2 text-slate-500">{row.count}</td>
-              <td className="py-2 text-right font-semibold tabular-nums text-slate-900">
+              <td className="py-2.5 text-neutral-400">{row.count}</td>
+              <td className="py-2.5 text-right font-semibold tabular-nums text-white">
                 {fmt(row.total)}
               </td>
             </tr>

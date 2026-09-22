@@ -46,7 +46,7 @@ export default function App() {
 
   return (
     <HashRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-      <div className="flex min-h-screen flex-col bg-slate-50 text-slate-800">
+      <div className="flex min-h-screen flex-col bg-black text-neutral-100 selection:bg-emerald-500/30 selection:text-emerald-200">
         <NavBar wallet={wallet} />
         <div className="flex-1">
           <AnimatedRoutes wallet={wallet} />

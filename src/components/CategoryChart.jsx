@@ -27,8 +27,8 @@ export default function CategoryChart({ expenses }) {
   if (data.length === 0) return null
 
   return (
-    <div className="mb-8 rounded-xl border border-slate-200 bg-white p-5">
-      <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-400">
+    <div className="mb-8 rounded-xl border border-white/10 bg-neutral-900/80 p-5 shadow-md backdrop-blur-sm">
+      <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-neutral-400">
         Spending by category
       </h2>
       <ResponsiveContainer width="100%" height={260}>
@@ -42,11 +42,21 @@ export default function CategoryChart({ expenses }) {
             paddingAngle={2}
           >
             {data.map((_, i) => (
-              <Cell key={i} fill={COLORS[i % COLORS.length]} />
+              <Cell key={i} fill={COLORS[i % COLORS.length]} stroke="#171717" strokeWidth={2} />
             ))}
           </Pie>
-          <Tooltip formatter={(v) => money.format(v)} />
-          <Legend />
+          <Tooltip
+            formatter={(v) => money.format(v)}
+            contentStyle={{
+              backgroundColor: '#171717',
+              borderColor: 'rgba(255, 255, 255, 0.1)',
+              borderRadius: '0.75rem',
+              color: '#ffffff',
+              boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)',
+            }}
+            itemStyle={{ color: '#34d399' }}
+          />
+          <Legend wrapperStyle={{ fontSize: '12px', color: '#a3a3a3' }} />
         </PieChart>
       </ResponsiveContainer>
     </div>
