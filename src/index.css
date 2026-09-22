@@ -1,3 +1,46 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* ---- Global smoothness layer (no JS, no bundle cost) ---- */
+
+/* Smooth in-page scrolling (anchor jumps, scroll-to-top, etc.) */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Gentle default transitions on interactive elements so hovers/focus/press
+   feel smooth everywhere, without touching each component. */
+button,
+a,
+input,
+select,
+textarea {
+  transition:
+    background-color 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease,
+    box-shadow 0.18s ease,
+    transform 0.12s ease,
+    opacity 0.18s ease;
+}
+
+/* Subtle tactile press on real buttons (not disabled ones). */
+button:not(:disabled):active {
+  transform: translateY(1px) scale(0.99);
+}
+
+/* Honor users who ask for less motion: kill transitions/animations/smooth scroll. */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

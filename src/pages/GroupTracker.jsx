@@ -15,6 +15,10 @@ import {
 } from '../lib/chain.js'
 import { money, centsToDollars, formatDay, downloadExpensesCsv } from '../lib/format.js'
 import GroupPayerTable from '../components/GroupPayerTable.jsx'
+import { ExpenseTrackerEvents } from '../lib/chain.js'
+import { CURRENCIES, getPreferredCurrency, setPreferredCurrency, loadRates, makeFormatter } from '../lib/currency.js'
+import { computeSettlement } from '../lib/settle.js'
+import { displayName } from '../lib/nicknames.js'
 
 const CategoryChart = lazy(() => import('../components/CategoryChart.jsx'))
 
@@ -38,6 +42,10 @@ export default function GroupTracker({ wallet }) {
   const [date, setDate] = useState(todayISO())
   const [busy, setBusy] = useState(false)
   const [toast, setToast] = useState(null)
+  const [currency, setCurrency] = useState(getPreferredCurrency())
+  const [rates, setRates] = useState(null)
+  const [rateInfo, setRateInfo] = useState(null)
+  const [nameBump, setNameBump] = useState(0)
 
   const showToast = useCallback((kind, text, url) => {
     setToast({ kind, text, url })
@@ -48,6 +56,14 @@ export default function GroupTracker({ wallet }) {
     () => expenses.reduce((sum, e) => sum + centsToDollars(e.amount), 0),
     [expenses],
   )
+
+  const fmt = useMemo(() => {
+    if (rates) return makeFormatter(currency, rates)
+    return (cents) => money.format(centsToDollars(cents))
+  }, [currency, rates])
+
+  const settlement = useMemo(() => computeSettlement(expenses), [expenses])
+  void nameBump // re-render trigger after a nickname edit
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -81,6 +97,24 @@ export default function GroupTracker({ wallet }) {
   useEffect(() => {
     load()
   }, [load])
+
+  useEffect(() => {
+    let cancelled = false
+    loadRates().then((r) => {
+      if (cancelled) return
+      setRates(r.rates)
+      setRateInfo(r)
+    })
+    return () => { cancelled = true }
+  }, [])
+
+  useEffect(() => {
+    const off = ExpenseTrackerEvents.onGroupExpenseAdded(groupId, () => {
+      showToast('info', 'New entry added to this ledger.')
+      load()
+    })
+    return off
+  }, [groupId, load, showToast])
 
   async function handleAdd(e) {
     e.preventDefault()
@@ -177,7 +211,7 @@ export default function GroupTracker({ wallet }) {
       <div className="mb-8 grid grid-cols-2 gap-3">
         <div className="rounded-xl border border-slate-200 bg-white px-4 py-3">
           <p className="text-xs uppercase tracking-wide text-slate-400">Total logged</p>
-          <p className="mt-1 text-lg font-semibold tabular-nums text-slate-900">{money.format(total)}</p>
+          <p className="mt-1 text-lg font-semibold tabular-nums text-slate-900">{fmt(Math.round(total * 100))}</p>
         </div>
         <div className="rounded-xl border border-slate-200 bg-white px-4 py-3">
           <p className="text-xs uppercase tracking-wide text-slate-400">Entries</p>
@@ -185,8 +219,49 @@ export default function GroupTracker({ wallet }) {
         </div>
       </div>
 
+      {/* Currency selector + FX note */}
+      <div className="mb-4 flex items-center gap-2 text-xs text-slate-500">
+        <span>Show amounts in</span>
+        <select
+          value={currency}
+          onChange={(e) => { setCurrency(e.target.value); setPreferredCurrency(e.target.value) }}
+          className="rounded-lg border border-slate-300 px-2 py-1 text-xs focus:border-emerald-500 focus:outline-none"
+        >
+          {CURRENCIES.map((c) => (
+            <option key={c.code} value={c.code}>{c.code} — {c.label}</option>
+          ))}
+        </select>
+        {rateInfo && currency !== 'USD' && (
+          <span className="text-slate-400">
+            {rateInfo.source === 'live' ? `live rate${rateInfo.date ? ` · ${rateInfo.date}` : ''}` : `${rateInfo.source} rate`}
+          </span>
+        )}
+      </div>
+
+      {/* Settle up — who owes whom (off-chain math from on-chain data) */}
+      {settlement.transfers.length > 0 && (
+        <div className="mb-8 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+          <h2 className="mb-1 text-sm font-semibold uppercase tracking-wide text-slate-400">Settle up</h2>
+          <p className="mb-3 text-xs text-slate-400">
+            Equal split across contributors · {fmt(settlement.perHead)} each. Computed from on-chain entries.
+          </p>
+          <ul className="space-y-2">
+            {settlement.transfers.map((t, i) => (
+              <li key={i} className="flex items-center justify-between rounded-lg border border-slate-100 bg-slate-50 px-3 py-2 text-sm">
+                <span>
+                  <span className="font-medium text-rose-600">{displayName(t.from)}</span>
+                  <span className="mx-1.5 text-slate-400">pays</span>
+                  <span className="font-medium text-emerald-700">{displayName(t.to)}</span>
+                </span>
+                <span className="font-semibold tabular-nums text-slate-900">{fmt(t.amount)}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       {/* Who contributed */}
-      <GroupPayerTable expenses={expenses} />
+      <GroupPayerTable expenses={expenses} formatAmount={fmt} onRenamed={() => setNameBump((n) => n + 1)} />
 
       {/* Spending-by-category chart */}
       <Suspense fallback={null}>
@@ -301,13 +376,11 @@ export default function GroupTracker({ wallet }) {
                   </div>
                   <p className="text-xs text-slate-400">
                     {displayDate(e)} · logged by{' '}
-                    <span className="font-mono">
-                      {e.payer.slice(0, 6)}…{e.payer.slice(-4)}
-                    </span>
+                    <span className="font-medium text-slate-500">{displayName(e.payer)}</span>
                   </p>
                 </div>
                 <p className="font-semibold tabular-nums text-slate-900">
-                  {money.format(centsToDollars(e.amount))}
+                  {fmt(e.amount)}
                 </p>
               </li>
             ))}

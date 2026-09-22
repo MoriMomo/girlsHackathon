@@ -54,13 +54,33 @@ function fileToBase64(file) {
   })
 }
 
+// Robustly parse a money value that may arrive as a number or a messy string
+// like "$1,234.56", "1.234,56", "Rp 15.000", or "12,50". Returns a positive
+// number or null.
+function parseAmount(raw) {
+  if (typeof raw === 'number') return Number.isFinite(raw) && raw > 0 ? raw : null
+  let str = String(raw).replace(/[^0-9.,]/g, '') // strip currency symbols/letters
+  if (!str) return null
+  const lastComma = str.lastIndexOf(',')
+  const lastDot = str.lastIndexOf('.')
+  // Whichever separator appears LAST is the decimal separator.
+  if (lastComma > lastDot) {
+    // comma is decimal: remove dots (thousands), swap comma -> dot
+    str = str.replace(/\./g, '').replace(',', '.')
+  } else {
+    // dot is decimal (or none): remove commas (thousands)
+    str = str.replace(/,/g, '')
+  }
+  const n = Number(str)
+  return Number.isFinite(n) && n > 0 ? n : null
+}
+
 // Normalize/validate model or heuristic output into safe fields.
 function normalize(fields) {
   const out = { amount: null, description: '', date: todayISO(), category: DEFAULT_CATEGORY }
 
   if (fields && fields.amount != null) {
-    const n = Number(String(fields.amount).replace(/[^0-9.]/g, ''))
-    if (Number.isFinite(n) && n > 0) out.amount = n
+    out.amount = parseAmount(fields.amount)
   }
   if (fields && typeof fields.description === 'string') {
     out.description = fields.description.trim().slice(0, 180)
@@ -90,15 +110,22 @@ async function scanWithGemini(base64, mimeType, apiKey) {
           parts: [
             {
               text:
-                'You extract a single expense from a receipt image. Reply with ONLY compact JSON, no markdown fences: ' +
-                `{"amount": number as a plain number, "description": short merchant or item summary, "date": "YYYY-MM-DD", "category": one of [${cats}]}. ` +
-                'If a field is unreadable, use null.',
+                'You are extracting ONE expense from a photo of a receipt. Return the GRAND TOTAL actually paid ' +
+                '(the final total AFTER tax and tips, NOT the subtotal, NOT an individual line item). ' +
+                'Return fields: ' +
+                'amount = the grand total as a plain number only, no currency symbol, no thousands separators, dot for decimals e.g. 1234.56; ' +
+                'description = the merchant or store name if visible, else a 2-4 word summary of what was bought; ' +
+                'date = the purchase date on the receipt in strict YYYY-MM-DD format (assume current year if the year is missing, null if no date); ' +
+                'category = the single best fit from this list: ' + cats + '. ' +
+                'Map food/restaurants/cafes/groceries to Food; taxi/fuel/transit to Transport; utilities/telco/rent to Bills; ' +
+                'retail/clothing/electronics to Shopping; pharmacy/clinic to Health; movies/games/bars to Entertainment; otherwise Other. ' +
+                'If a field is genuinely unreadable use null for that field. Do not guess wildly.',
             },
             { inline_data: { mime_type: mimeType || 'image/jpeg', data: base64 } },
           ],
         },
       ],
-      generationConfig: { temperature: 0, maxOutputTokens: 200 },
+      generationConfig: { temperature: 0, maxOutputTokens: 300, responseMimeType: 'application/json' },
     }),
   })
 

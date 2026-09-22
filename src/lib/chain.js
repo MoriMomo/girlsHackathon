@@ -512,3 +512,25 @@ export async function fetchAllGroups(provider) {
     return []
   }
 }
+
+// ---------------------------------------------------------------------------
+// Live event subscription for real-time UI updates. Uses a read-only provider
+// so it works with no wallet connected. Returns an unsubscribe function.
+// ---------------------------------------------------------------------------
+export const ExpenseTrackerEvents = {
+  // Fire `cb` whenever a GroupExpenseAdded event lands for `groupId`.
+  onGroupExpenseAdded(groupId, cb) {
+    if (!isContractConfigured()) return () => {}
+    let contract
+    try {
+      const provider = getReadOnlyProvider()
+      contract = readContract(provider)
+      const filter = contract.filters.GroupExpenseAdded(groupId)
+      const handler = () => { try { cb() } catch { /* ignore */ } }
+      contract.on(filter, handler)
+      return () => { try { contract.off(filter, handler) } catch { /* ignore */ } }
+    } catch {
+      return () => {}
+    }
+  },
+}
