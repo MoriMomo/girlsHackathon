@@ -45,7 +45,7 @@ export default function App() {
   const wallet = useWallet()
 
   return (
-    <HashRouter>
+    <HashRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <div className="flex min-h-screen flex-col bg-slate-50 text-slate-800">
         <NavBar wallet={wallet} />
         <div className="flex-1">

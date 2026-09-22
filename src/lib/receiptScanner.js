@@ -13,7 +13,14 @@
 import { CATEGORIES, DEFAULT_CATEGORY } from './chain.js'
 
 const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/
-const GEMINI_MODEL = 'gemini-flash-latest'
+// Resilient model fallback cascade: if the primary model is busy (503) or rate-limited (429),
+// try the next active model endpoint before falling back to local heuristic.
+const GEMINI_MODELS = [
+  'gemini-3.5-flash',
+  'gemini-3.5-flash-lite',
+  'gemini-3.1-flash-lite',
+  'gemini-flash-latest',
+]
 
 function todayISO() {
   const d = new Date()
@@ -95,49 +102,66 @@ function normalize(fields) {
 }
 
 async function scanWithGemini(base64, mimeType, apiKey) {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`
   const cats = CATEGORIES.map((c) => `"${c}"`).join(',')
+  let lastError = null
 
-  const resp = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-goog-api-key': apiKey,
-    },
-    body: JSON.stringify({
-      contents: [
-        {
-          parts: [
-            {
-              text:
-                'You are extracting ONE expense from a photo of a receipt. Return the GRAND TOTAL actually paid ' +
-                '(the final total AFTER tax and tips, NOT the subtotal, NOT an individual line item). ' +
-                'Return fields: ' +
-                'amount = the grand total as a plain number only, no currency symbol, no thousands separators, dot for decimals e.g. 1234.56; ' +
-                'description = the merchant or store name if visible, else a 2-4 word summary of what was bought; ' +
-                'date = the purchase date on the receipt in strict YYYY-MM-DD format (assume current year if the year is missing, null if no date); ' +
-                'category = the single best fit from this list: ' + cats + '. ' +
-                'Map food/restaurants/cafes/groceries to Food; taxi/fuel/transit to Transport; utilities/telco/rent to Bills; ' +
-                'retail/clothing/electronics to Shopping; pharmacy/clinic to Health; movies/games/bars to Entertainment; otherwise Other. ' +
-                'If a field is genuinely unreadable use null for that field. Do not guess wildly.',
-            },
-            { inline_data: { mime_type: mimeType || 'image/jpeg', data: base64 } },
-          ],
+  for (const model of GEMINI_MODELS) {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`
+    try {
+      const resp = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-goog-api-key': apiKey,
         },
-      ],
-      generationConfig: { temperature: 0, maxOutputTokens: 300, responseMimeType: 'application/json' },
-    }),
-  })
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [
+                {
+                  text:
+                    'You are extracting ONE expense from a photo of a receipt. Return the GRAND TOTAL actually paid ' +
+                    '(the final total AFTER tax and tips, NOT the subtotal, NOT an individual line item). ' +
+                    'Return fields: ' +
+                    'amount = the grand total as a plain number only, no currency symbol, no thousands separators, dot for decimals e.g. 1234.56; ' +
+                    'description = the merchant or store name if visible, else a 2-4 word summary of what was bought; ' +
+                    'date = the purchase date on the receipt in strict YYYY-MM-DD format (assume current year if the year is missing, null if no date); ' +
+                    'category = the single best fit from this list: ' + cats + '. ' +
+                    'Map food/restaurants/cafes/groceries to Food; taxi/fuel/transit to Transport; utilities/telco/rent to Bills; ' +
+                    'retail/clothing/electronics to Shopping; pharmacy/clinic to Health; movies/games/bars to Entertainment; otherwise Other. ' +
+                    'If a field is genuinely unreadable use null for that field. Do not guess wildly.',
+                },
+                { inline_data: { mime_type: mimeType || 'image/jpeg', data: base64 } },
+              ],
+            },
+          ],
+          generationConfig: { temperature: 0, maxOutputTokens: 300, responseMimeType: 'application/json' },
+        }),
+      })
 
-  if (!resp.ok) {
-    const txt = await resp.text().catch(() => '')
-    throw new Error(`Gemini request failed (${resp.status}). ${txt.slice(0, 140)}`)
+      if (!resp.ok) {
+        const txt = await resp.text().catch(() => '')
+        lastError = new Error(`Gemini ${model} failed (${resp.status}). ${txt.slice(0, 140)}`)
+        // If high demand (503), rate limit (429), or model deprecated/unsupported (404), try next model
+        if (resp.status === 503 || resp.status === 429 || resp.status === 404) {
+          console.warn(`[receiptScanner] Model ${model} returned ${resp.status}, trying fallback model...`)
+          continue
+        }
+        throw lastError
+      }
+
+      const data = await resp.json()
+      const content = data?.candidates?.[0]?.content?.parts?.map((p) => p.text || '').join('') || ''
+      const match = content.match(/\{[\s\S]*\}/)
+      if (!match) throw new Error(`Gemini ${model} did not return readable fields.`)
+      return { ...JSON.parse(match[0]), modelUsed: model }
+    } catch (err) {
+      lastError = err
+      console.warn(`[receiptScanner] Error querying ${model}:`, err?.message || err)
+    }
   }
-  const data = await resp.json()
-  const content = data?.candidates?.[0]?.content?.parts?.map((p) => p.text || '').join('') || ''
-  const match = content.match(/\{[\s\S]*\}/)
-  if (!match) throw new Error('Gemini did not return readable fields.')
-  return JSON.parse(match[0])
+
+  throw lastError || new Error('All Gemini model endpoints failed.')
 }
 
 function scanLocally(hintText) {
@@ -163,7 +187,7 @@ function scanLocally(hintText) {
 
 /**
  * Public entry point.
- * @returns {Promise<{ amount: number|null, description: string, date: string, category: string, mode: 'ai'|'local' }>}
+ * @returns {Promise<{ amount: number|null, description: string, date: string, category: string, mode: 'ai'|'local', modelUsed?: string, fallbackReason?: string }>}
  */
 export async function scanReceipt({ file, hintText } = {}) {
   const apiKey = getApiKey()
@@ -172,14 +196,15 @@ export async function scanReceipt({ file, hintText } = {}) {
     try {
       const base64 = await fileToBase64(file)
       const raw = await scanWithGemini(base64, file.type, apiKey)
-      return { ...normalize(raw), mode: 'ai' }
+      return { ...normalize(raw), mode: 'ai', modelUsed: raw.modelUsed }
     } catch (err) {
-      console.warn('[receiptScanner] Gemini scan failed, falling back to local:', err)
+      console.warn('[receiptScanner] Gemini scan failed, falling back to local heuristic:', err)
       const raw = scanLocally(hintText || file?.name)
-      return { ...normalize(raw), mode: 'local' }
+      return { ...normalize(raw), mode: 'local', fallbackReason: err?.message || 'AI unavailable' }
     }
   }
 
   const raw = scanLocally(hintText || file?.name)
   return { ...normalize(raw), mode: 'local' }
 }
+

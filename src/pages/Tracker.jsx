@@ -104,12 +104,13 @@ export default function Tracker({ wallet }) {
       if (result.description) setDescription(result.description)
       if (result.date) setDate(result.date)
       if (result.category) setCategory(result.category)
-      showToast(
-        'info',
-        result.mode === 'ai'
-          ? 'AI read this receipt. Review the fields, then save.'
-          : 'Local scan pre-filled a best guess. Review the fields, then save.',
-      )
+      if (result.mode === 'ai') {
+        showToast('info', 'AI read this receipt. Review the fields, then save.')
+      } else if (result.fallbackReason?.includes('503')) {
+        showToast('info', 'AI server is currently at capacity (503). Pre-filled local guess — please verify.')
+      } else {
+        showToast('info', 'Local scan pre-filled a best guess. Review the fields, then save.')
+      }
     } catch (err) {
       showToast('error', `Scan failed: ${err.message || err}. Enter it manually.`)
     } finally {
