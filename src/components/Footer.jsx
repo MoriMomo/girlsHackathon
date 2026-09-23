@@ -13,13 +13,15 @@ export default function Footer() {
           <div className="flex items-center gap-2">
             <img
               src={ledgrLogo}
-              alt="ledgr"
+              alt=""
+              width="32"
+              height="32"
               className="h-8 w-8 object-contain"
             />
             <span className="text-sm font-semibold text-white">ledgr</span>
           </div>
 
-          <span className="text-neutral-600">·</span>
+          <span className="text-neutral-500">·</span>
 
           <a
             href="https://x.com/LedgrAppBOT"
@@ -60,8 +62,10 @@ export default function Footer() {
           >
             <img
               src={botLogo}
-              alt="BOT Chain"
-              className="h-5 object-contain"
+              alt=""
+              width="20"
+              height="20"
+              className="h-5 w-5 object-contain"
             />
             <span className="font-medium">Built on BOT Chain</span>
           </a>

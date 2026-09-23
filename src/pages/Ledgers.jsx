@@ -14,7 +14,7 @@ import { motion } from 'framer-motion'
 export default function Ledgers({ wallet }) {
   const navigate = useNavigate()
   const { address, connected } = wallet
-  const [tab, setTab] = useState('mine') // 'mine' | 'all'
+  const [tab, setTab] = useState(connected ? 'mine' : 'all') // 'mine' | 'all'
   const [groups, setGroups] = useState([])
   const [loading, setLoading] = useState(true)
   const [openInput, setOpenInput] = useState('')

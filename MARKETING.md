@@ -1,113 +1,143 @@
-# ledgr — X (Twitter) launch plan
+# ledgr - X (Twitter) launch plan
 
-Account: **@LedgrAppBOT** · Every post tags **@BOTChain_ai** · **2 posts/day**.
+Account: **@LedgrAppBOT** . Every post tags **@BOTChain_ai** . **2 posts/day**.
+Deadline: **Thu Sep 25, 2026, 11:59 PM GMT+7**.
 
-Satisfies submission item #5 (5+ valid posts in the 30 days before submission)
-and item #4 (the launch post). Deadline: **Thu Sep 25, 2026, 11:59 PM GMT+7**.
+**Live site:** https://morimomo.github.io/girlsHackathon/
+**Mainnet contract:** 0xe18f4DF3B4Faa2D7F49b3F1581c04427a0Be9223
+**Explorer:** https://scan.botchain.ai/address/0xe18f4DF3B4Faa2D7F49b3F1581c04427a0Be9223
 
-Cadence: post one in the morning, one in the evening (not back-to-back).
-Add a screenshot/clip to posts 3, 4, 5, 9. Posts 1–8 can go now on testnet;
-post 9 fires once mainnet is live.
+Cadence: one post morning, one evening (not back-to-back). Screenshot/clip on
+posts 3, 4, 5, 8, 9. Post 9 is your official launch + submission tweet.
 
 ---
 
-## Day 1 — Sep 21
+## Day 1 - Sep 22
 
-### 1 — Teaser (pin this)
+### 1 - Teaser (pin this)
 - [ ] Posted
 ```
-Building for @BOTChain_ai Build Week 🛠️
-An expense tracker where you literally can't fudge the numbers — every entry is permanent & public on-chain.
-Meet ledgr. 👇 #BuildWeek #BOTChain
+Building for @BOTChain_ai Build Week 👻
+
+Something to track where the money actually goes - fully on-chain, no database, no trust-me-bro spreadsheets.
+
+Every expense is a public, verifiable transaction.
+
+Name drop soon. #BuildWeek #BOTChain
 ```
 
-### 2 — The problem
+### 2 - The problem
 - [ ] Posted
 ```
-Every shared expense sheet has one flaw: someone can quietly edit or delete a row and you'd never know.
-ledgr puts each entry on @BOTChain_ai — permanent, timestamped, signed. No trust required.
-```
+Shared expenses always end the same way: "wait, who paid for what?"
 
-## Day 2 — Sep 22
+Screenshots get edited. Sheets get "accidentally" changed. Someone always forgets.
 
-### 3 — Core feature (+ tracker screenshot)
-- [ ] Posted
-```
-ledgr, part 1: log an expense → saved forever on-chain ✍️
-Amount, note, date, category. One tap, one signature.
-No database. The chain IS the backend. Live on @BOTChain_ai testnet 👇
-```
+What if the ledger literally could not be tampered with?
 
-### 4 — Shared ledgers (+ "who contributed" screenshot)
-- [ ] Posted
-```
-ledgr, part 2: shared ledgers 🤝
-Split rent or a trip fund — anyone can add, anyone can verify who paid what. No spreadsheet owner, no "trust me."
-Built on @BOTChain_ai
-```
-
-## Day 3 — Sep 23
-
-### 5 — AI receipt scan (+ clip)
-- [ ] Posted
-```
-ledgr, part 3: 📸 → 🧾
-Snap a receipt, AI reads the amount, date & merchant, you confirm, it's on-chain.
-The boring part, automated. Powered by @BOTChain_ai ⚡
-```
-
-### 6 — Build story (+ blog link)
-- [ ] Posted
-```
-Zero backend. So how does ledgr remember your ledgers?
-It reconstructs them live from on-chain events — open it anywhere, they're just there.
-Wrote it up 👇 [blog link] @BOTChain_ai
-```
-
-## Day 4 — Sep 24
-
-### 7 — Why on-chain
-- [ ] Posted
-```
-"Why put expenses on a blockchain?"
-Because the moment people share money, the question stops being where it's stored and becomes: can I trust nobody edited it. ledgr answers that. @BOTChain_ai
-```
-
-### 8 — Countdown teaser
-- [ ] Posted
-```
-ledgr hits @BOTChain_ai Mainnet very soon 👀
-Tamper-proof expenses. Shared, verifiable ledgers. AI receipt scan.
-Almost there. #BuildWeek
-```
-
-## Launch day — when mainnet is live
-
-### 9 — LAUNCH (submission post — paste link into the form)
-- [ ] Posted
-```
-ledgr is LIVE on @BOTChain_ai Mainnet 🚀
-Tamper-proof expense tracker with shared, verifiable ledgers.
-Try it → [live link]
-Contract → [explorer link]
-#BuildWeek Vol.2 🧾
+That's what we built on @BOTChain_ai 🧵
 ```
 
 ---
 
-## Bonus / evergreen post � "why on-chain" (sourced, credible)
+## Day 2 - Sep 23
+
+### 3 - Core feature (add screenshot)
 - [ ] Posted
 ```
-"Why put expenses on a blockchain?"
+Meet ledgr 👻
 
-Because a blockchain IS a shared, tamper-proof ledger � a single source of truth with no trusted middleman (IBM's own definition).
+An expense tracker where every entry is an on-chain transaction on @BOTChain_ai.
 
-A shared sheet has an owner who can edit it. ledgr doesn't. Every entry is signed & permanent.
+- Add an expense -> it's a signed tx
+- Anyone can verify it on the explorer
+- No backend, no database, nothing to fake
+
+Track your money like it's 2026. 📊
+```
+
+### 4 - Shared ledgers (add screenshot)
+- [ ] Posted
+```
+The best part of ledgr: shared ledgers 👯
+
+Create a group, share the link, everyone adds their expenses.
+
+The whole group's spending lives on-chain - tamper-proof and settle-up ready.
+
+Trips, roommates, teams. No more "I'll pay you back later" chaos.
 
 @BOTChain_ai
 ```
-## Cadence tips (make frequency work for you)
-- Space the 2 daily posts ~morning + evening, not back-to-back — looks organic.
-- Reply to your own posts with a one-liner ("here's it on the explorer 👇") — doubles activity cheaply.
-- Quote/like a @BOTChain_ai post once a day — organizer visibility.
-- Screenshots on 3, 4, 5, 9; a clip on 5 if you can.
+
+---
+
+## Day 3 - Sep 24
+
+### 5 - AI receipt scan (add clip)
+- [ ] Posted
+```
+Snap a receipt 📸 -> ledgr reads it for you.
+
+AI pulls the total, the merchant, the category - you just confirm and it goes on-chain.
+
+No manual typing. No mistakes. Built on @BOTChain_ai.
+```
+
+### 6 - Multi-currency + settle up
+- [ ] Posted
+```
+ledgr speaks your currency 💱
+
+Live exchange rates, spend-by-category charts, one-tap settle-up, wallet nicknames so you see names not 0x18634...
+
+All on-chain. All verifiable. All on @BOTChain_ai.
+```
+
+---
+
+## Day 4 - Sep 25 (submission day)
+
+### 7 - Why on-chain (proof)
+- [ ] Posted
+```
+"Why put an expense tracker on a blockchain?"
+
+Because a shared ledger's whole value is that no one can quietly rewrite history.
+
+Blockchain is a tamper-evident, append-only record (IBM's own definition). That's exactly what a group's money needs.
+
+@BOTChain_ai
+```
+
+### 8 - Full demo (add clip)
+- [ ] Posted
+```
+Full ledgr walkthrough 🎬
+
+Connect wallet -> add expense -> scan a receipt -> create a shared ledger -> browse everything on-chain.
+
+Live now on @BOTChain_ai mainnet 👇
+https://morimomo.github.io/girlsHackathon/
+```
+
+### 9 - Official launch + submission (add screenshot)
+- [ ] Posted
+```
+ledgr is live on @BOTChain_ai mainnet 👻🚀
+
+An on-chain expense tracker + shared ledger. Every entry is a public, verifiable transaction. No database, ever.
+
+Try it: https://morimomo.github.io/girlsHackathon/
+Contract: 0xe18f4DF3B4Faa2D7F49b3F1581c04427a0Be9223
+
+Built for #BuildWeek 💛
+```
+
+---
+
+## Notes
+- Swap in real screenshots/clips before posting 3, 4, 5, 8, 9.
+- Reply to your own teaser (post 1) with the launch (post 9) to build a thread.
+- Pin post 1 early, then re-pin post 9 on launch day.
+- Engage: reply to @BOTChain_ai and other builders' posts to stay active (item #5 needs 5+ posts + presence).
