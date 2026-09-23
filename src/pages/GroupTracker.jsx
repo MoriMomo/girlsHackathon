@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, lazy, Suspense } from 'react'
 import { useParams, Link } from 'react-router-dom'
+import { QRCodeSVG } from 'qrcode.react'
 import {
   getReadOnlyProvider,
   fetchGroupInfo,
@@ -8,6 +9,8 @@ import {
   friendlyError,
   isContractConfigured,
   explorerTxUrl,
+  explorerAddressUrl,
+  CONTRACT_ADDRESS,
   todayISO,
   TARGET,
   CATEGORIES,
@@ -243,6 +246,17 @@ export default function GroupTracker({ wallet }) {
             Copy link
           </button>
         </div>
+        {shareUrl && (
+          <div className="mt-4 flex items-center gap-3 rounded-xl border border-white/10 bg-neutral-950 p-3">
+            <div className="rounded-lg bg-white p-2">
+              <QRCodeSVG value={shareUrl} size={88} level="M" />
+            </div>
+            <div className="text-xs text-neutral-400">
+              <p className="font-medium text-neutral-200">Scan to open this ledger</p>
+              <p className="mt-0.5">Point a phone camera here to view every entry on {TARGET.chainName} — no wallet needed to look.</p>
+            </div>
+          </div>
+        )}
       </div>
 
       {contractMissing && (
@@ -449,9 +463,20 @@ export default function GroupTracker({ wallet }) {
                       {e.category}
                     </span>
                   </div>
-                  <p className="text-xs text-neutral-500">
-                    {displayDate(e)} · logged by{' '}
-                    <span className="font-medium text-neutral-300">{displayName(e.payer)}</span>
+                  <p className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-neutral-500">
+                    <span>{displayDate(e)} · logged by <span className="font-medium text-neutral-300">{displayName(e.payer)}</span></span>
+                    <a
+                      href={explorerAddressUrl(CONTRACT_ADDRESS)}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-0.5 text-emerald-500/70 transition-colors hover:text-emerald-400"
+                      title="Verify on the BOT Chain explorer"
+                    >
+                      On-chain
+                      <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M14 5h5m0 0v5m0-5L10 14M9 5H5v14h14v-4" />
+                      </svg>
+                    </a>
                   </p>
                 </div>
                 <p className="font-semibold tabular-nums text-white">
