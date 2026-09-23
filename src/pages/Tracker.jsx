@@ -5,6 +5,8 @@ import {
   sendAddExpense,
   isContractConfigured,
   explorerTxUrl,
+  explorerAddressUrl,
+  CONTRACT_ADDRESS,
   todayISO,
   TARGET,
   CATEGORIES,
@@ -586,7 +588,21 @@ export default function Tracker({ wallet }) {
                       {e.category}
                     </span>
                   </div>
-                  <p className="mt-0.5 text-xs text-neutral-500">{displayDate(e)}</p>
+                  <p className="mt-0.5 flex items-center gap-2 text-xs text-neutral-500">
+                    <span>{displayDate(e)}</span>
+                    <a
+                      href={explorerAddressUrl(CONTRACT_ADDRESS)}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-0.5 text-emerald-500/70 transition-colors hover:text-emerald-400"
+                      title="Verify on the BOT Chain explorer"
+                    >
+                      On-chain
+                      <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M14 5h5m0 0v5m0-5L10 14M9 5H5v14h14v-4" />
+                      </svg>
+                    </a>
+                  </p>
                 </div>
                 <p className="shrink-0 font-semibold tabular-nums text-white">
                   {fmt(e.amount)}

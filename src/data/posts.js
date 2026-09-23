@@ -1,4 +1,4 @@
-// Blog posts, defined as data (no CMS, no backend — deploy-safe on static hosting).
+﻿// Blog posts, defined as data (no CMS, no backend â€” deploy-safe on static hosting).
 // Add a post by adding an entry, newest first. `body` is an array of blocks;
 // each block is { type: 'p' | 'h2' | 'ul', text?, items? } so the post page
 // renders structured content without a markdown parser dependency.
@@ -12,7 +12,7 @@ export const posts = [
     title: 'ledgr is officially launched on BOT Chain Mainnet',
     date: '2026-09-22',
     excerpt:
-      'ledgr — a tamper-proof, on-chain expense tracker with shared group ledgers — is now officially live on BOT Chain Mainnet.',
+      'ledgr â€” a tamper-proof, on-chain expense tracker with shared group ledgers â€” is now officially live on BOT Chain Mainnet.',
     body: [
       {
         type: 'p',
@@ -35,8 +35,8 @@ export const posts = [
         text: 'ledgr is officially deployed on BOT Chain Mainnet (Chain ID 677). The contract and all activity are publicly verifiable on the BOT Chain explorer.',
       },
       { type: 'ul', items: [
-        'Mainnet contract: 0x… (paste your mainnet address here after deploy)',
-        'Live app: https://… (paste your live domain here)',
+        'Mainnet contract: 0xe18f4DF3B4Faa2D7F49b3F1581c04427a0Be9223',
+        'Live app: https://led-gr.online',
         'Network: BOT Chain Mainnet, Chain ID 677',
       ] },
       { type: 'h2', text: 'Why on-chain' },
@@ -80,7 +80,7 @@ export const posts = [
     title: 'Build notes: shared ledgers, AI receipts, and no backend',
     date: '2026-09-19',
     excerpt:
-      'A look under the hood at how ledgr works with zero backend — group ledgers, receipt scanning, and reconstructing everything from on-chain events.',
+      'A look under the hood at how ledgr works with zero backend â€” group ledgers, receipt scanning, and reconstructing everything from on-chain events.',
     body: [
       {
         type: 'p',
