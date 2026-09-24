@@ -10,7 +10,7 @@ function formatDate(iso) {
 export default function Blog() {
   return (
     <div className="bg-black text-white">
-      <div className="mx-auto max-w-3xl px-5 py-20">
+      <div className="mx-auto max-w-3xl px-5 pt-28 pb-20 sm:pt-32">
         <p className="mb-3 text-xs font-medium uppercase tracking-widest text-neutral-600">Blog</p>
         <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">News &amp; updates</h1>
         <p className="mt-3 max-w-xl text-sm text-neutral-400">

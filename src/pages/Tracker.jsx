@@ -236,7 +236,7 @@ export default function Tracker({ wallet }) {
   const aiOn = isAiAvailable()
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-8">
+    <div className="mx-auto max-w-3xl px-4 pt-24 pb-8 sm:pt-28">
       <div className="mb-8">
         <h1 className="text-2xl font-semibold tracking-tight text-white">Your expense tracker</h1>
         <p className="mt-1 text-sm text-neutral-400">

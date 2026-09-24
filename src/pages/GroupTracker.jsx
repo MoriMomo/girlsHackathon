@@ -168,7 +168,7 @@ export default function GroupTracker({ wallet }) {
 
   if (loading) {
     return (
-      <div className="mx-auto max-w-3xl px-4 py-8">
+      <div className="mx-auto max-w-3xl px-4 pt-24 pb-8 sm:pt-28">
         <div className="flex items-center gap-3">
           <div className="relative flex h-3 w-3">
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
@@ -183,7 +183,7 @@ export default function GroupTracker({ wallet }) {
 
   if (notFound) {
     return (
-      <div className="mx-auto max-w-3xl px-4 py-16 text-center">
+      <div className="mx-auto max-w-3xl px-4 pt-28 pb-16 text-center sm:pt-32">
         <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-white/5 text-neutral-400">
           <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path
@@ -222,7 +222,7 @@ export default function GroupTracker({ wallet }) {
   const shareUrl = typeof window !== 'undefined' ? window.location.href : ''
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-8">
+    <div className="mx-auto max-w-3xl px-4 pt-24 pb-8 sm:pt-28">
       <div className="mb-8">
         <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">{group.name}</h1>
         <p className="mt-1 text-sm text-neutral-400">
