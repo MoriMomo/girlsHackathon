@@ -52,10 +52,10 @@ export default function NavBar({ wallet }) {
   }
 
   return (
-    // Floating wrapper: sticky, transparent. Padding tightens as the page
+    // Floating wrapper: fixed overlay, transparent. Padding tightens as the page
     // scrolls so the pill appears to lift and condense.
     <motion.div
-      className="sticky top-0 z-20"
+      className="fixed top-0 inset-x-0 z-30 pointer-events-none"
       initial={false}
       animate={{
         paddingLeft: scrolled ? 12 : 16,
@@ -74,7 +74,7 @@ export default function NavBar({ wallet }) {
             : '0 8px 24px -12px rgba(0,0,0,0.5)',
         }}
         transition={{ type: 'spring', stiffness: 260, damping: 30 }}
-        className="mx-auto flex w-full items-center gap-3 rounded-full border border-white/10 px-3 py-2 backdrop-blur-md sm:gap-4 sm:px-5 sm:py-2.5"
+        className="pointer-events-auto mx-auto flex w-full items-center gap-3 rounded-full border border-white/10 px-3 py-2 backdrop-blur-md sm:gap-4 sm:px-5 sm:py-2.5"
       >
         {/* Brand - far left */}
         <Link
@@ -187,7 +187,7 @@ export default function NavBar({ wallet }) {
 
       {/* Mobile nav drawer - floating pill panel below the bar */}
       {mobileOpen && (
-        <div className="mx-auto mt-2 w-full max-w-7xl rounded-2xl border border-white/10 bg-black/90 px-3 py-3 shadow-lg shadow-black/40 backdrop-blur-md md:hidden">
+        <div className="pointer-events-auto mx-auto mt-2 w-full max-w-7xl rounded-2xl border border-white/10 bg-black/90 px-3 py-3 shadow-lg shadow-black/40 backdrop-blur-md md:hidden">
           <nav className="flex flex-col gap-1">
             <NavLink to="/" className={mobileLinkClass} end onClick={() => setMobileOpen(false)}>
               Home

@@ -114,9 +114,6 @@ export default function Landing({ wallet }) {
 
       {/* ====== HERO ====== */}
       <section className="relative overflow-hidden bg-[#0a0a0a]">
-        {/* Subtle top-edge border — clean crisp 1px line, not a blob */}
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-emerald-500/40 to-transparent" aria-hidden="true" />
-
         {/* WebGL side rays -- brand-tinted, behind hero content (pointer-events:none) */}
         <div className="pointer-events-none absolute inset-0" aria-hidden="true">
           <SideRays
@@ -133,7 +130,7 @@ export default function Landing({ wallet }) {
           />
         </div>
 
-        <div className="relative z-10 mx-auto max-w-5xl px-5 pb-20 pt-16 sm:pb-28 sm:pt-24">
+        <div className="relative z-10 mx-auto max-w-5xl px-5 pb-20 pt-24 sm:pb-28 sm:pt-32">
           {/* Status chip */}
           <div className="mb-8 flex items-center gap-2 text-xs tracking-wide text-neutral-500">
             <span className="relative flex h-2 w-2">

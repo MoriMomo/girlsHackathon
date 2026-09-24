@@ -30,7 +30,7 @@ export default function BlogPost() {
   if (!post) {
     return (
       <div className="bg-black text-white">
-        <div className="mx-auto max-w-3xl px-5 py-24 text-center">
+        <div className="mx-auto max-w-3xl px-5 pt-28 pb-24 text-center sm:pt-32">
           <h1 className="text-xl font-semibold">Post not found</h1>
           <p className="mt-2 text-sm text-neutral-400">This article doesn&apos;t exist or was moved.</p>
           <Link
@@ -46,7 +46,7 @@ export default function BlogPost() {
 
   return (
     <div className="bg-black text-white">
-      <article className="mx-auto max-w-3xl px-5 py-20">
+      <article className="mx-auto max-w-3xl px-5 pt-28 pb-20 sm:pt-32">
         <Link
           to="/blog"
           className="text-sm text-neutral-500 transition hover:text-neutral-300"

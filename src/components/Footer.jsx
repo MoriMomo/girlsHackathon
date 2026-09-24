@@ -1,7 +1,8 @@
 import { shortAddr } from '../lib/format.js'
 import { explorerAddressUrl, isContractConfigured, CONTRACT_ADDRESS, TARGET } from '../lib/chain.js'
-import ledgrLogo from '../assets/Green_and_White_Simple_Botanical_Blank_Pages_A5_Document-removebg-preview.png'
-import botLogo from '../assets/botlogo.png'
+import ledgrLogo from '../assets/ledgrlogo.png'
+import botLogo from '../assets/image.jpeg'
+
 
 // Shared footer — full-black, minimalist, matches the NavBar.
 export default function Footer() {

@@ -26,7 +26,7 @@ export default function Login({ wallet }) {
   }
 
   return (
-    <div className="mx-auto flex max-w-md flex-col items-center px-4 py-20">
+    <div className="mx-auto flex max-w-md flex-col items-center px-4 pt-28 pb-20 sm:pt-32">
       {/* Logo, with an animated emerald glow + pulse while connecting */}
       <div className="relative mb-6 flex items-center justify-center">
         <AnimatePresence>
