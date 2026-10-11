@@ -64,7 +64,7 @@ npm run dev
 
 Then open the URL Vite prints (default http://localhost:5173/girlsHackathon/).
 
-Optional — enable the real AI receipt scan: copy `.env.example` to `.env` and set `VITE_GEMINI_API_KEY` (free key from Google AI Studio). Without it, the scan runs in local-parser mode.
+Optional — enable the AI receipt scan: set `VITE_GEMINI_API_KEY` in `.env` or configure it directly in the app UI via the "Configure AI key" button (stored locally in `localStorage`). Free key from [Google AI Studio](https://aistudio.google.com).
 
 ## Deployment
  

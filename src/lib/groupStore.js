@@ -1,16 +1,18 @@
-// Local memory of shared ledgers on BOT Chain Mainnet.
+import { TARGET } from './chain.js'
 
-const KEY_PREFIX = 'ledgr.groups.mainnet.'
+// Local memory of shared ledgers partitioned by network.
+
 const LEGACY_PREFIX = 'ledgr.groups.'
 
-// Known testnet groups from earlier staging/testing to permanently filter out of Mainnet
+// Known testnet groups from earlier staging/testing to filter out when on Mainnet
 const TESTNET_IDS = new Set([
   '0x3f48b38407d136dbd8a292be406dd2341cc3036b5ab44bb22ed464c7d00ac2d4'.toLowerCase(), // tes 1
   '0x386a125fba94c19e751a2a448ea7209744a128099431971999f12e2ede34de53'.toLowerCase(), // tes2
 ])
 
 function keyFor(wallet) {
-  return `${KEY_PREFIX}${String(wallet || '').toLowerCase()}`
+  const net = TARGET?.key || 'testnet'
+  return `ledgr.groups.${net}.${String(wallet || '').toLowerCase()}`
 }
 
 function legacyKeyFor(wallet) {
@@ -25,21 +27,22 @@ function sanitizeStorage(wallet) {
   const w = String(wallet).toLowerCase()
 
   try {
-    // Remove old unpartitioned key so testnet groups don't persist
-    localStorage.removeItem(legacyKeyFor(w))
-    localStorage.removeItem(`ledgr.groups.testnet.${w}`)
+    if (TARGET?.key === 'mainnet') {
+      // Remove old unpartitioned legacy key
+      localStorage.removeItem(legacyKeyFor(w))
 
-    // Sanitize Mainnet key
-    const raw = localStorage.getItem(keyFor(w))
-    if (raw) {
-      const parsed = JSON.parse(raw)
-      if (Array.isArray(parsed)) {
-        const cleaned = parsed.filter((g) => {
-          const id = g.id?.toLowerCase()
-          return !TESTNET_IDS.has(id) && g.network !== 'testnet'
-        })
-        if (cleaned.length !== parsed.length) {
-          localStorage.setItem(keyFor(w), JSON.stringify(cleaned))
+      // Sanitize Mainnet key
+      const raw = localStorage.getItem(keyFor(w))
+      if (raw) {
+        const parsed = JSON.parse(raw)
+        if (Array.isArray(parsed)) {
+          const cleaned = parsed.filter((g) => {
+            const id = g.id?.toLowerCase()
+            return !TESTNET_IDS.has(id) && g.network !== 'testnet'
+          })
+          if (cleaned.length !== parsed.length) {
+            localStorage.setItem(keyFor(w), JSON.stringify(cleaned))
+          }
         }
       }
     }
@@ -48,7 +51,7 @@ function sanitizeStorage(wallet) {
   }
 }
 
-/** Return the remembered groups for a wallet on Mainnet: [{ id, name, addedAt }]. */
+/** Return the remembered groups for a wallet on the active network: [{ id, name, addedAt }]. */
 export function listGroups(wallet) {
   if (!wallet) return []
   sanitizeStorage(wallet)
@@ -57,7 +60,10 @@ export function listGroups(wallet) {
     if (!raw) return []
     const parsed = JSON.parse(raw)
     if (!Array.isArray(parsed)) return []
-    return parsed.filter((g) => !TESTNET_IDS.has(g.id?.toLowerCase()))
+    if (TARGET?.key === 'mainnet') {
+      return parsed.filter((g) => !TESTNET_IDS.has(g.id?.toLowerCase()))
+    }
+    return parsed
   } catch {
     return []
   }

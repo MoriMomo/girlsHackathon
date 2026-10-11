@@ -82,11 +82,11 @@ export default function Footer() {
             {' · '}
             <a
               className="text-white underline hover:text-neutral-300"
-              href="https://scan.botchain.ai"
+              href={TARGET.blockExplorerUrls[0]}
               target="_blank"
               rel="noreferrer"
             >
-              BOT Chain Explorer
+              {TARGET.chainName} Explorer
             </a>
           </p>
         </div>

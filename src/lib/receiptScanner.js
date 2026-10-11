@@ -1,31 +1,25 @@
-// AI receipt scanner for the money tracker.
+// AI receipt scanner for the ledgr expense tracker.
 //
 // Reads a receipt image and extracts { amount, description, date, category } to
 // PRE-FILL the expense form. The user always reviews and confirms the on-chain
-// transaction -- the scan never writes anything.
+// transaction -- the scan never writes anything automatically.
 //
-// Modes:
-//   1. REAL AI  -- if a Google Gemini key is set, the image is sent to Gemini's
-//                  vision model. Free key: https://aistudio.google.com.
-//   2. FALLBACK -- no key -> a local heuristic parses the file name. Never fails
-//                  live during a demo.
+// Honest scanning design:
+//   - If a valid Gemini key is present, calls the Gemini multimodal vision endpoint.
+//   - If no key is set or the API fails, the scanner fails honestly with a clear
+//     explanation instead of regex-guessing junk numbers from the file name.
 
 import { CATEGORIES, DEFAULT_CATEGORY } from './chain.js'
 
 const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/
-// Resilient model fallback cascade: if the primary model is busy (503) or rate-limited (429),
-// try the next active model endpoint before falling back to local heuristic.
+
+// Active, production-tested Gemini vision models.
+// Leads with stable flash aliases, cascading to lightweight and primary tiers.
 const GEMINI_MODELS = [
-  // Lead with Google's maintained aliases (kept pointed at a healthy model),
-  // then concrete flash tiers. More endpoints = better odds during a 503 wave.
-  // If ALL fail, scanReceipt() falls back to the local heuristic so the app
-  // never breaks in a demo.
   'gemini-flash-latest',
-  'gemini-flash-lite-latest',
-  'gemini-3.5-flash',
-  'gemini-3-flash-preview',
-  'gemini-3.5-flash-lite',
   'gemini-3.1-flash-lite',
+  'gemini-3.5-flash-lite',
+  'gemini-3.8-flash',
 ]
 
 function todayISO() {
@@ -37,17 +31,29 @@ function todayISO() {
 export function getApiKey() {
   try {
     const fromEnv = import.meta.env?.VITE_GEMINI_API_KEY
-    if (fromEnv) return String(fromEnv).trim()
+    if (fromEnv && String(fromEnv).trim().length > 0) return String(fromEnv).trim()
   } catch {
     /* import.meta.env may be undefined */
   }
   try {
     const fromLs = localStorage.getItem('gemini_api_key')
-    if (fromLs) return fromLs.trim()
+    if (fromLs && fromLs.trim().length > 0) return fromLs.trim()
   } catch {
     /* localStorage unavailable */
   }
   return ''
+}
+
+export function setApiKey(key) {
+  try {
+    if (key && key.trim()) {
+      localStorage.setItem('gemini_api_key', key.trim())
+    } else {
+      localStorage.removeItem('gemini_api_key')
+    }
+  } catch {
+    /* ignore */
+  }
 }
 
 export function isAiAvailable() {
@@ -72,23 +78,19 @@ function fileToBase64(file) {
 // number or null.
 function parseAmount(raw) {
   if (typeof raw === 'number') return Number.isFinite(raw) && raw > 0 ? raw : null
-  let str = String(raw).replace(/[^0-9.,]/g, '') // strip currency symbols/letters
+  let str = String(raw).replace(/[^0-9.,]/g, '')
   if (!str) return null
   const lastComma = str.lastIndexOf(',')
   const lastDot = str.lastIndexOf('.')
-  // Whichever separator appears LAST is the decimal separator.
   if (lastComma > lastDot) {
-    // comma is decimal: remove dots (thousands), swap comma -> dot
     str = str.replace(/\./g, '').replace(',', '.')
   } else {
-    // dot is decimal (or none): remove commas (thousands)
     str = str.replace(/,/g, '')
   }
   const n = Number(str)
   return Number.isFinite(n) && n > 0 ? n : null
 }
 
-// Normalize/validate model or heuristic output into safe fields.
 function normalize(fields) {
   const out = { amount: null, description: '', date: todayISO(), category: DEFAULT_CATEGORY }
 
@@ -112,7 +114,7 @@ async function scanWithGemini(base64, mimeType, apiKey) {
   let lastError = null
 
   for (const model of GEMINI_MODELS) {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`
     try {
       const resp = await fetch(url, {
         method: 'POST',
@@ -128,89 +130,135 @@ async function scanWithGemini(base64, mimeType, apiKey) {
                   text:
                     'You are extracting ONE expense from a photo of a receipt. Return the GRAND TOTAL actually paid ' +
                     '(the final total AFTER tax and tips, NOT the subtotal, NOT an individual line item). ' +
-                    'Return fields: ' +
-                    'amount = the grand total as a plain number only, no currency symbol, no thousands separators, dot for decimals e.g. 1234.56; ' +
-                    'description = the merchant or store name if visible, else a 2-4 word summary of what was bought; ' +
-                    'date = the purchase date on the receipt in strict YYYY-MM-DD format (assume current year if the year is missing, null if no date); ' +
-                    'category = the single best fit from this list: ' + cats + '. ' +
+                    'Return valid JSON only with these exact fields: ' +
+                    'amount = the grand total as a plain number only, no currency symbol, no thousands separators, dot for decimals e.g. 1234.56, or null if unreadable; ' +
+                    'description = the merchant or store name if visible, else a concise 2-4 word summary of what was bought; ' +
+                    'date = the purchase date on the receipt in strict YYYY-MM-DD format (assume current year if year is missing, null if no date); ' +
+                    'category = the single best fit from this exact list: ' + cats + '. ' +
                     'Map food/restaurants/cafes/groceries to Food; taxi/fuel/transit to Transport; utilities/telco/rent to Bills; ' +
                     'retail/clothing/electronics to Shopping; pharmacy/clinic to Health; movies/games/bars to Entertainment; otherwise Other. ' +
-                    'If a field is genuinely unreadable use null for that field. Do not guess wildly.',
+                    'If a field is genuinely unreadable or this is not a receipt, use null for amount and description. Do not guess wildly.',
                 },
                 { inline_data: { mime_type: mimeType || 'image/jpeg', data: base64 } },
               ],
             },
           ],
-          generationConfig: { temperature: 0, maxOutputTokens: 300, responseMimeType: 'application/json' },
+          generationConfig: {
+            temperature: 0,
+            maxOutputTokens: 300,
+            responseMimeType: 'application/json',
+          },
         }),
       })
 
       if (!resp.ok) {
         const txt = await resp.text().catch(() => '')
-        lastError = new Error(`Gemini ${model} failed (${resp.status}). ${txt.slice(0, 140)}`)
-        // If high demand (503), rate limit (429), or model deprecated/unsupported (404), try next model
+        let errorMsg = `Gemini ${model} failed (${resp.status})`
+        try {
+          const parsed = JSON.parse(txt)
+          if (parsed?.error?.message) errorMsg = parsed.error.message
+        } catch {
+          if (txt) errorMsg = `${errorMsg}: ${txt.slice(0, 100)}`
+        }
+
+        // If key is invalid (400 or 403), stop cascading immediately
+        if (resp.status === 400 || resp.status === 403) {
+          throw new Error(`API key error: ${errorMsg}`)
+        }
+
+        lastError = new Error(errorMsg)
+        // High demand (503), rate limit (429), or deprecated model (404) -> try next in cascade
         if (resp.status === 503 || resp.status === 429 || resp.status === 404) {
-          console.warn(`[receiptScanner] Model ${model} returned ${resp.status}, trying fallback model...`)
+          console.warn(`[receiptScanner] Model ${model} returned ${resp.status}, cascading to next model...`)
           continue
         }
         throw lastError
       }
 
       const data = await resp.json()
-      const content = data?.candidates?.[0]?.content?.parts?.map((p) => p.text || '').join('') || ''
-      const match = content.match(/\{[\s\S]*\}/)
-      if (!match) throw new Error(`Gemini ${model} did not return readable fields.`)
-      return { ...JSON.parse(match[0]), modelUsed: model }
+      // Extract text content, filtering out internal thinking parts if present
+      const parts = data?.candidates?.[0]?.content?.parts || []
+      const textParts = parts.filter((p) => !p.thought).map((p) => p.text || '')
+      const content = (textParts.length ? textParts.join('') : parts.map((p) => p.text || '').join('')).trim()
+
+      const clean = content.replace(/```(?:json)?/gi, '').replace(/```/g, '').trim()
+      const match = clean.match(/\{[\s\S]*\}/)
+      if (!match) throw new Error(`Gemini ${model} did not return structured JSON.`)
+
+      const parsed = JSON.parse(match[0])
+      return { ...parsed, modelUsed: model }
     } catch (err) {
       lastError = err
       console.warn(`[receiptScanner] Error querying ${model}:`, err?.message || err)
+      // Stop early if it's an API key or client authentication error
+      if (err?.message?.includes('API key error')) throw err
     }
   }
 
-  throw lastError || new Error('All Gemini model endpoints failed.')
-}
-
-function scanLocally(hintText) {
-  const text = String(hintText || '')
-  const fields = { amount: null, description: '', date: null, category: null }
-
-  const amountMatch = text.match(/(\d+(?:[.,]\d{1,2})?)/)
-  if (amountMatch) fields.amount = amountMatch[1].replace(',', '.')
-
-  const dateMatch = text.match(/(\d{4}-\d{2}-\d{2})/)
-  if (dateMatch) fields.date = dateMatch[1]
-
-  let desc = text
-    .replace(/\.[a-z0-9]+$/i, '')
-    .replace(/[_-]+/g, ' ')
-    .replace(amountMatch?.[0] || '', '')
-    .replace(dateMatch?.[0] || '', '')
-    .trim()
-  fields.description = desc || 'Scanned receipt'
-
-  return fields
+  throw lastError || new Error('All Gemini model endpoints failed. Please try again.')
 }
 
 /**
  * Public entry point.
- * @returns {Promise<{ amount: number|null, description: string, date: string, category: string, mode: 'ai'|'local', modelUsed?: string, fallbackReason?: string }>}
+ * @returns {Promise<{
+ *   success: boolean,
+ *   amount: number|null,
+ *   description: string,
+ *   date: string,
+ *   category: string,
+ *   mode: 'ai'|'unconfigured'|'failed',
+ *   modelUsed?: string,
+ *   error?: string
+ * }>}
  */
-export async function scanReceipt({ file, hintText } = {}) {
+export async function scanReceipt({ file } = {}) {
   const apiKey = getApiKey()
 
-  if (apiKey && file) {
-    try {
-      const base64 = await fileToBase64(file)
-      const raw = await scanWithGemini(base64, file.type, apiKey)
-      return { ...normalize(raw), mode: 'ai', modelUsed: raw.modelUsed }
-    } catch (err) {
-      console.warn('[receiptScanner] Gemini scan failed, falling back to local heuristic:', err)
-      const raw = scanLocally(hintText || file?.name)
-      return { ...normalize(raw), mode: 'local', fallbackReason: err?.message || 'AI unavailable' }
+  if (!apiKey) {
+    return {
+      success: false,
+      mode: 'unconfigured',
+      error: 'No Gemini API key configured. Enter expense manually or add your key.',
+      amount: null,
+      description: '',
+      date: todayISO(),
+      category: DEFAULT_CATEGORY,
     }
   }
 
-  const raw = scanLocally(hintText || file?.name)
-  return { ...normalize(raw), mode: 'local' }
-}
+  if (!file) {
+    return {
+      success: false,
+      mode: 'failed',
+      error: 'No receipt file provided.',
+      amount: null,
+      description: '',
+      date: todayISO(),
+      category: DEFAULT_CATEGORY,
+    }
+  }
 
+  try {
+    const base64 = await fileToBase64(file)
+    const raw = await scanWithGemini(base64, file.type, apiKey)
+    const fields = normalize(raw)
+
+    return {
+      success: true,
+      mode: 'ai',
+      modelUsed: raw.modelUsed,
+      ...fields,
+    }
+  } catch (err) {
+    console.warn('[receiptScanner] Gemini scan failed:', err)
+    return {
+      success: false,
+      mode: 'failed',
+      error: err?.message || 'AI vision scan failed. Please enter the details manually.',
+      amount: null,
+      description: '',
+      date: todayISO(),
+      category: DEFAULT_CATEGORY,
+    }
+  }
+}

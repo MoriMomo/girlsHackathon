@@ -17,7 +17,7 @@ import {
   checkGroupExists,
   getReadOnlyProvider,
 } from '../lib/chain.js'
-import { scanReceipt, isAiAvailable } from '../lib/receiptScanner.js'
+import { scanReceipt, isAiAvailable, getApiKey, setApiKey } from '../lib/receiptScanner.js'
 import { money, centsToDollars, formatDay, downloadExpensesCsv, categoryColor } from '../lib/format.js'
 import { CURRENCIES, getPreferredCurrency, setPreferredCurrency, loadRates, makeFormatter } from '../lib/currency.js'
 import { useCountUp } from '../lib/useCountUp.js'
@@ -59,6 +59,9 @@ export default function Tracker({ wallet }) {
   const [busy, setBusy] = useState(false)
   const [loadingList, setLoadingList] = useState(false)
   const [scanning, setScanning] = useState(false)
+  const [showKeyModal, setShowKeyModal] = useState(false)
+  const [keyInput, setKeyInput] = useState('')
+  const [aiAvailable, setAiAvailable] = useState(isAiAvailable())
   const fileInputRef = useRef(null)
 
   useEffect(() => {
@@ -165,25 +168,56 @@ export default function Tracker({ wallet }) {
     const file = e.target.files?.[0]
     if (fileInputRef.current) fileInputRef.current.value = ''
     if (!file) return
+
+    if (!isAiAvailable()) {
+      showToast('error', 'AI scanner requires a Gemini API key. Click "Configure API key" or enter fields manually.')
+      setKeyInput(getApiKey())
+      setShowKeyModal(true)
+      return
+    }
+
     setScanning(true)
     try {
-      const result = await scanReceipt({ file, hintText: file.name })
-      if (result.amount != null) setAmount(String(result.amount))
-      if (result.description) setDescription(result.description)
-      if (result.date) setDate(result.date)
-      if (result.category) setCategory(result.category)
-      if (result.mode === 'ai') {
-        showToast('info', 'AI read this receipt. Review the fields, then save.')
-      } else if (result.fallbackReason?.includes('503')) {
-        showToast('info', 'AI server is currently at capacity (503). Pre-filled local guess — please verify.')
+      const result = await scanReceipt({ file })
+      if (result.success) {
+        if (result.amount != null) setAmount(String(result.amount))
+        if (result.description) setDescription(result.description)
+        if (result.date) setDate(result.date)
+        if (result.category) setCategory(result.category)
+
+        if (result.amount != null) {
+          showToast('success', `Receipt scanned via ${result.modelUsed || 'AI'}. Review and confirm below.`)
+        } else {
+          showToast('info', 'Image processed, but no clear total amount was detected. Please enter details manually.')
+        }
       } else {
-        showToast('info', 'Local scan pre-filled a best guess. Review the fields, then save.')
+        showToast('error', result.error || 'Receipt scan could not extract data. Please enter manually.')
       }
     } catch (err) {
-      showToast('error', `Scan failed: ${err.message || err}. Enter it manually.`)
+      showToast('error', `Scan failed: ${err.message || err}. Please enter manually.`)
     } finally {
       setScanning(false)
     }
+  }
+
+  function handleSaveKey(e) {
+    e.preventDefault()
+    setApiKey(keyInput.trim())
+    setAiAvailable(isAiAvailable())
+    setShowKeyModal(false)
+    if (keyInput.trim()) {
+      showToast('success', 'Gemini API key saved to browser localStorage.')
+    } else {
+      showToast('info', 'Gemini API key cleared from browser localStorage.')
+    }
+  }
+
+  function handleClearKey() {
+    setApiKey('')
+    setKeyInput('')
+    setAiAvailable(isAiAvailable())
+    setShowKeyModal(false)
+    showToast('info', 'Gemini API key cleared.')
   }
 
   async function handleAdd(e) {
@@ -322,18 +356,93 @@ export default function Tracker({ wallet }) {
             </svg>
             {scanning ? 'Scanning…' : 'Scan receipt'}
           </button>
-          <span
-            className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium ${aiOn ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400' : 'border-white/10 bg-white/5 text-neutral-400'}`}
-            title={
-              aiOn
-                ? 'A Gemini key is configured: real AI vision scan.'
-                : 'No AI key set: uses a local heuristic. Add VITE_GEMINI_API_KEY to enable AI vision.'
-            }
+          <button
+            type="button"
+            onClick={() => {
+              setKeyInput(getApiKey())
+              setShowKeyModal(true)
+            }}
+            className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium transition hover:border-white/30 ${
+              aiAvailable
+                ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400'
+                : 'border-amber-500/30 bg-amber-500/10 text-amber-300'
+            }`}
+            title="Configure or test Google Gemini API key"
           >
-            <span className={`h-1.5 w-1.5 rounded-full ${aiOn ? 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.8)]' : 'bg-neutral-500'}`} />
-            {aiOn ? 'AI vision on' : 'Local mode'}
-          </span>
+            <span
+              className={`h-1.5 w-1.5 rounded-full ${
+                aiAvailable ? 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.8)]' : 'bg-amber-400'
+              }`}
+            />
+            {aiAvailable ? 'AI vision ready' : 'Configure AI key'}
+          </button>
         </div>
+
+        {/* Gemini API Key Modal */}
+        {showKeyModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
+            <div className="w-full max-w-md rounded-2xl border border-white/10 bg-neutral-900 p-6 shadow-2xl">
+              <div className="flex items-center justify-between">
+                <h3 className="text-base font-semibold text-white">Gemini Vision Key Settings</h3>
+                <button
+                  type="button"
+                  onClick={() => setShowKeyModal(false)}
+                  className="text-neutral-400 transition hover:text-white"
+                >
+                  ✕
+                </button>
+              </div>
+              <p className="mt-2 text-xs leading-relaxed text-neutral-400">
+                Receipt scanning uses Google Gemini vision. Paste a free key from{' '}
+                <a
+                  href="https://aistudio.google.com/apikey"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-emerald-400 underline hover:text-emerald-300"
+                >
+                  Google AI Studio
+                </a>
+                . Keys are saved in your local browser storage and never sent to any intermediary server.
+              </p>
+
+              <form onSubmit={handleSaveKey} className="mt-4">
+                <label className="mb-1 block text-xs font-medium text-neutral-300">API Key</label>
+                <input
+                  type="password"
+                  value={keyInput}
+                  onChange={(e) => setKeyInput(e.target.value)}
+                  placeholder="Paste your Gemini API key..."
+                  className="w-full rounded-lg border border-white/15 bg-neutral-950 px-3 py-2 font-mono text-xs text-white placeholder-neutral-600 focus:border-emerald-500 focus:outline-none"
+                />
+
+                <div className="mt-4 flex items-center justify-between gap-2">
+                  <button
+                    type="button"
+                    onClick={handleClearKey}
+                    className="rounded-lg border border-red-500/30 px-3 py-1.5 text-xs text-red-400 transition hover:bg-red-500/10"
+                  >
+                    Clear Key
+                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowKeyModal(false)}
+                      className="rounded-lg border border-white/10 px-3 py-1.5 text-xs text-neutral-300 transition hover:bg-white/5"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="rounded-lg bg-emerald-600 px-4 py-1.5 text-xs font-semibold text-white shadow transition hover:bg-emerald-500"
+                    >
+                      Save Key
+                    </button>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-5">
           <div className="sm:col-span-1">

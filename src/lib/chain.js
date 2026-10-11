@@ -4,29 +4,43 @@
 import { BrowserProvider, Contract, getAddress, JsonRpcProvider } from 'ethers'
 
 // ---------------------------------------------------------------------------
-// BOT Chain Mainnet configuration & contract
+// BOT Chain networks & contract configuration
 // ---------------------------------------------------------------------------
-export const TARGET = {
-  key: 'mainnet',
-  chainId: 677,
-  chainIdHex: '0x2a5',
-  chainName: 'BOT Chain Mainnet',
-  rpcUrls: ['https://rpc.botchain.ai'],
-  nativeCurrency: { name: 'BOT', symbol: 'BOT', decimals: 18 },
-  blockExplorerUrls: ['https://scan.botchain.ai/'],
-  contractAddress: '0xe18f4DF3B4Faa2D7F49b3F1581c04427a0Be9223',
-  deployBlock: 24130000,
+export const NETWORKS = {
+  testnet: {
+    key: 'testnet',
+    chainId: 968,
+    chainIdHex: '0x3c8',
+    chainName: 'BOT Chain Testnet',
+    rpcUrls: ['https://rpc.bohr.life'],
+    nativeCurrency: { name: 'BOT', symbol: 'BOT', decimals: 18 },
+    blockExplorerUrls: ['https://scan.bohr.life/'],
+    contractAddress: '0x30A2A3AcD2E5118F50E34A0Ee2e464C5EF8614B0',
+    deployBlock: 24069633,
+  },
+  mainnet: {
+    key: 'mainnet',
+    chainId: 677,
+    chainIdHex: '0x2a5',
+    chainName: 'BOT Chain Mainnet',
+    rpcUrls: ['https://rpc.botchain.ai'],
+    nativeCurrency: { name: 'BOT', symbol: 'BOT', decimals: 18 },
+    blockExplorerUrls: ['https://scan.botchain.ai/'],
+    contractAddress: '0xe18f4DF3B4Faa2D7F49b3F1581c04427a0Be9223',
+    deployBlock: 24130000,
+  },
 }
 
-export const ACTIVE_NETWORK = 'mainnet'
-export const NETWORKS = { mainnet: TARGET }
+// Active network selection: switch to 'mainnet' when ready to go to production
+export const ACTIVE_NETWORK = 'testnet'
+export const TARGET = NETWORKS[ACTIVE_NETWORK]
 
 export function getActiveNetworkKey() {
-  return 'mainnet'
+  return ACTIVE_NETWORK
 }
 
 export async function setActiveNetworkKey() {
-  // Mainnet only
+  // Configured via ACTIVE_NETWORK
 }
 
 export const CONTRACT_ADDRESS = TARGET.contractAddress
@@ -153,7 +167,9 @@ export function friendlyError(err) {
     return 'Transaction cancelled in MetaMask.'
   }
   if (/insufficient funds/i.test(raw)) {
-    return 'Not enough BOT in your wallet to pay for gas on BOT Chain Mainnet.'
+    return TARGET.key === 'testnet'
+      ? 'Not enough BOT in your wallet to pay for gas. Get testnet BOT from the faucet.'
+      : 'Not enough BOT in your wallet to pay for gas on BOT Chain Mainnet.'
   }
   if (/user rejected/i.test(raw)) {
     return 'Request rejected in MetaMask.'

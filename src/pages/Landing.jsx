@@ -70,24 +70,19 @@ export default function Landing({ wallet }) {
   // hero feels live. Each entry types its 3 lines, holds, clears, next repeats.
   const termEntries = [
     [
-      { text: '> addExpense(4250, "Coffee with team")', cls: 'text-emerald-400' },
-      { text: '  tx 0x3a1f…c82e  confirming…', cls: 'text-neutral-500' },
-      { text: '  ✓ block 24,069,891  confirmed', cls: 'text-emerald-400' },
-    ],
-    [
-      { text: '> addExpense(1800, "Bus fare")', cls: 'text-emerald-400' },
-      { text: '  tx 0x7be2…41aa  confirming…', cls: 'text-neutral-500' },
-      { text: '  ✓ block 24,069,905  confirmed', cls: 'text-emerald-400' },
-    ],
-    [
       { text: '> addGroupExpense("Apt 4B", 32000, "Rent")', cls: 'text-emerald-400' },
-      { text: '  tx 0x9c04…d7f1  confirming…', cls: 'text-neutral-500' },
-      { text: '  ✓ block 24,069,932  confirmed', cls: 'text-emerald-400' },
+      { text: '  tx 0x9c04…d7f1  payer 0x3a1f…c82e confirming…', cls: 'text-neutral-500' },
+      { text: '  ✓ block 24,069,891  confirmed on BOT Chain', cls: 'text-emerald-400' },
     ],
     [
-      { text: '> addExpense(950, "Groceries")', cls: 'text-emerald-400' },
-      { text: '  tx 0x2ad8…6b3c  confirming…', cls: 'text-neutral-500' },
-      { text: '  ✓ block 24,069,958  confirmed', cls: 'text-emerald-400' },
+      { text: '> addGroupExpense("Hackathon Team", 4500, "Cloud Servers")', cls: 'text-emerald-400' },
+      { text: '  tx 0x7be2…41aa  payer 0x82f1…90d2 confirming…', cls: 'text-neutral-500' },
+      { text: '  ✓ block 24,069,905  immutable entry signed', cls: 'text-emerald-400' },
+    ],
+    [
+      { text: '> addGroupExpense("Trip to Bali", 8200, "AirBnB & Fuel")', cls: 'text-emerald-400' },
+      { text: '  tx 0x2ad8…6b3c  multi-party ledger updated', cls: 'text-neutral-500' },
+      { text: '  ✓ block 24,069,932  verifiable without login', cls: 'text-emerald-400' },
     ],
   ]
 
@@ -155,15 +150,15 @@ export default function Landing({ wallet }) {
 
           {/* Headline — left-aligned, large, specific */}
           <h1 className="max-w-3xl text-[clamp(2rem,5.5vw,3.75rem)] font-bold leading-[1.08] tracking-tight">
-            Expense tracking{' '}
+            Shared expense ledgers{' '}
             <br className="hidden sm:block" />
             that cannot be doctored.
           </h1>
 
           <p className="mt-5 max-w-xl text-base leading-relaxed text-neutral-400 sm:text-lg">
-            Commit transactions directly to {TARGET.chainName}. Keep a personal log or
-            share a group ledger link so roommates, clubs, and teams can inspect spending
-            without accounts or spreadsheets.
+            Spreadsheets have owners who can quietly alter rows. ledgr gives
+            roommates, clubs, and teams a permanent on-chain ledger — signed by each
+            payer&apos;s wallet and verifiable by anyone with a link, no accounts or database required.
           </p>
 
           {/* CTAs */}
@@ -322,10 +317,10 @@ export default function Landing({ wallet }) {
             <div className="max-w-xl">
               <h2 className="mb-4 text-xs font-medium uppercase tracking-widest text-neutral-400">Architecture</h2>
               <p className="text-base leading-relaxed text-neutral-400">
-                Traditional expense apps store records in centralized databases where rows
+                Traditional split apps and spreadsheets store records in centralized databases where rows
                 can be altered, backdated, or dropped without trace. ledgr delegates record-keeping
-                to an EVM smart contract, producing an immutable audit trail tied to cryptographic
-                signatures.
+                to an EVM smart contract on {TARGET.chainName}, producing an immutable audit trail tied to cryptographic
+                signatures — giving everyone a single, tamper-proof source of truth.
               </p>
               <div className="mt-8">
                 <button
