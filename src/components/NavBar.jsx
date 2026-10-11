@@ -115,17 +115,17 @@ export default function NavBar({ wallet }) {
 
         {/* Right side controls */}
         <div className="ml-auto flex items-center gap-2 md:ml-0 sm:gap-2.5">
-          {/* Mainnet status badge */}
+          {/* Network status badge */}
           <a
             href={TARGET.blockExplorerUrls[0]}
             target="_blank"
             rel="noreferrer"
             className="flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-xs font-medium text-emerald-400 transition hover:bg-emerald-500/15"
-            title="Running live on BOT Chain Mainnet (Chain ID 677) - click to view block explorer"
+            title={`Running live on ${TARGET.chainName} (Chain ID ${TARGET.chainId}) - click to view block explorer`}
           >
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.9)]" />
-            <span className="hidden sm:inline">BOT Chain Mainnet</span>
-            <span className="inline sm:hidden">Mainnet</span>
+            <span className="hidden sm:inline">{TARGET.chainName}</span>
+            <span className="inline sm:hidden">{TARGET.key === 'testnet' ? 'Testnet' : 'Mainnet'}</span>
           </a>
 
           <a
